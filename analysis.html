@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="docTitle">CryptoArt — Análisis</title>
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <img src="assets/logo.svg" alt="CryptoArt" class="brand-icon" width="48" height="48">
+      <div>
+        <h1>Crypto<span class="brand-accent">Art</span></h1>
+        <p class="tagline" data-i18n="tagline">Análisis diario · Fundamental + Técnico</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="lang-switch" role="group" aria-label="Idioma / Language">
+        <button class="lang-btn active" id="langEs" type="button">ES</button>
+        <button class="lang-btn" id="langEn" type="button">EN</button>
+      </div>
+      <button class="theme-btn" id="themeToggle" type="button" aria-label="Cambiar tema">🌙</button>
+    </div>
+    <div class="price-box" id="priceBox">
+      <span class="price-label" data-i18n="priceLabel">Precio actual</span>
+      <span class="price-value" id="currentPrice">—</span>
+      <span class="price-change" id="priceChange">—</span>
+    </div>
+  </header>
+
+  <nav class="main-nav" aria-label="Navegación principal">
+    <a href="index.html" class="nav-link" data-i18n="navHome">Inicio</a>
+    <a href="analysis.html?coin=bitcoin" class="nav-link" data-i18n="navAnalysis">Análisis</a>
+    <a href="about.html" class="nav-link" data-i18n="navAbout">Sobre nosotros</a>
+  </nav>
+
+  <div class="coin-tabs" id="coinTabs" role="tablist" aria-label="Criptoactivos">
+    <a class="coin-tab" href="analysis.html?coin=bitcoin" data-coin="bitcoin">BTC · Bitcoin</a>
+    <a class="coin-tab" href="analysis.html?coin=ethereum" data-coin="ethereum">ETH · Ethereum</a>
+    <a class="coin-tab" href="analysis.html?coin=solana" data-coin="solana">SOL · Solana</a>
+    <a class="coin-tab" href="analysis.html?coin=ripple" data-coin="ripple">XRP · XRP</a>
+    <a class="coin-tab" href="analysis.html?coin=dogecoin" data-coin="dogecoin">DOGE · Dogecoin</a>
+  </div>
+
+  <main class="container">
+    <section class="status-row" id="statusRow">
+      <div class="loader"></div>
+      <p id="statusText" data-i18n="statusLoading">Cargando datos de mercado en tiempo real…</p>
+    </section>
+
+    <!-- Cripto activa -->
+    <div class="coin-banner" id="coinBanner">—</div>
+
+    <section class="cards-grid">
+      <!-- Análisis Fundamental -->
+      <article class="card" id="fundamentalCard">
+        <div class="card-header">
+          <h2><span class="icon">📊</span> <span data-i18n="fundTitle">Análisis Fundamental</span></h2>
+          <span class="badge" id="fundBadge">—</span>
+        </div>
+        <p class="card-desc" data-i18n="fundDesc">Sentimiento de mercado, variaciones diarias, volumen y capitalización del día.</p>
+        <div class="metrics-list" id="fundMetrics"></div>
+        <div class="prob-bar-wrap">
+          <div class="prob-labels">
+            <span class="up-label"><span data-i18n="up">Subida</span> <b id="fundUp">—%</b></span>
+            <span class="down-label"><span data-i18n="down">Bajada</span> <b id="fundDown">—%</b></span>
+          </div>
+          <div class="prob-bar">
+            <div class="prob-fill up" id="fundUpBar"></div>
+            <div class="prob-fill down" id="fundDownBar"></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Análisis Técnico -->
+      <article class="card" id="technicalCard">
+        <div class="card-header">
+          <h2><span class="icon">📈</span> <span data-i18n="techTitle">Análisis Técnico</span></h2>
+          <span class="badge" id="techBadge">—</span>
+        </div>
+        <p class="card-desc" data-i18n="techDesc">RSI(14), medias móviles SMA20/SMA50 y MACD sobre los últimos 90 días.</p>
+        <div class="metrics-list" id="techMetrics"></div>
+        <div class="prob-bar-wrap">
+          <div class="prob-labels">
+            <span class="up-label"><span data-i18n="up">Subida</span> <b id="techUp">—%</b></span>
+            <span class="down-label"><span data-i18n="down">Bajada</span> <b id="techDown">—%</b></span>
+          </div>
+          <div class="prob-bar">
+            <div class="prob-fill up" id="techUpBar"></div>
+            <div class="prob-fill down" id="techDownBar"></div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Gráfico de precio -->
+    <section class="card chart-card">
+      <div class="card-header">
+        <h2><span class="icon">📉</span> <span data-i18n="dailyTitle">Evolución del precio — 90 días</span></h2>
+        <span class="badge" id="pairBadge">—</span>
+      </div>
+      <p class="card-desc" data-i18n="dailyDesc">Precio de cierre diario con medias móviles SMA 20 (verde) y SMA 50 (rojo) superpuestas.</p>
+      <div class="chart-wrap">
+        <canvas id="priceChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Gráfico en tiempo real (TradingView) -->
+    <section class="card chart-card">
+      <div class="card-header">
+        <h2><span class="icon">⚡</span> <span data-i18n="liveTitle">Gráfico en tiempo real — TradingView</span></h2>
+        <span class="badge" id="tvBadge">—</span>
+      </div>
+      <p class="card-desc" data-i18n="liveDesc">Gráfico en tiempo real provisto por TradingView · velas de 1 minuto.</p>
+      <div class="tv-wrap" id="tvChart"></div>
+    </section>
+
+    <!-- Resumen y Recomendación -->
+    <section class="summary-card" id="summaryCard">
+      <div class="summary-header">
+        <h2><span class="icon">🧭</span> <span data-i18n="summaryTitle">Resumen y Recomendación Profesional</span></h2>
+        <span class="reco-pill" id="recoPill">—</span>
+      </div>
+
+      <div class="summary-body">
+        <div class="combined-prob">
+          <div class="combined-prob-circle" id="combinedCircle">
+            <span id="combinedPct">—%</span>
+            <small data-i18n="combinedLabel">Prob. Subida Combinada</small>
+          </div>
+        </div>
+        <div class="summary-text">
+          <p id="summaryText" data-i18n="summaryPlaceholder">Analizando ambos enfoques para generar una recomendación…</p>
+          <ul class="reco-details" id="recoDetails"></ul>
+        </div>
+      </div>
+
+      <div class="range-block">
+        <h3><span data-i18n="rangeTitle">Rango estimado de fluctuación — hoy</span> <span class="range-date" id="rangeDate"></span></h3>
+        <div class="range-metrics" id="rangeMetrics"></div>
+        <p class="range-note" data-i18n="rangeNote">Estimado a partir de la volatilidad y el movimiento medio diario de los últimos 90 días, ajustado por la probabilidad combinada de subida/bajada del análisis. Es una horquilla estadística informativa, no una garantía.</p>
+      </div>
+
+      <p class="disclaimer" data-i18n="disclaimer">
+        ⚠️ Este análisis se genera automáticamente a partir de datos públicos (CoinGecko, Alternative.me) e indicadores estadísticos.
+        No constituye asesoría financiera. Las inversiones en criptoactivos conllevan alto riesgo.
+      </p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p><span data-i18n="footerPrefix">CryptoArt · Datos: CoinGecko API &amp; Alternative.me Fear &amp; Greed Index · Actualizado:</span> <span id="updateTime">—</span></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="js/app.js?v=2"></script>
+</body>
+</html>
+

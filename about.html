@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="aboutTitle">CryptoArt — Sobre nosotros</title>
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body data-page="about">
+  <div class="bg-glow"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <img src="assets/logo.svg" alt="CryptoArt" class="brand-icon" width="48" height="48">
+      <div>
+        <h1>Crypto<span class="brand-accent">Art</span></h1>
+        <p class="tagline" data-i18n="homeTagline">Análisis cripto · Fundamental + Técnico</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="lang-switch" role="group" aria-label="Idioma / Language">
+        <button class="lang-btn active" id="langEs" type="button">ES</button>
+        <button class="lang-btn" id="langEn" type="button">EN</button>
+      </div>
+      <button class="theme-btn" id="themeToggle" type="button" aria-label="Cambiar tema">🌙</button>
+    </div>
+  </header>
+
+  <nav class="main-nav" aria-label="Navegación principal">
+    <a href="index.html" class="nav-link" data-i18n="navHome">Inicio</a>
+    <a href="analysis.html?coin=bitcoin" class="nav-link" data-i18n="navAnalysis">Análisis</a>
+    <a href="about.html" class="nav-link" data-i18n="navAbout">Sobre nosotros</a>
+  </nav>
+
+  <main class="container">
+    <section class="hero card">
+      <h2 data-i18n="aboutHeroTitle">Sobre CryptoArt</h2>
+      <p class="hero-text" data-i18n="aboutHeroText">CryptoArt es una plataforma de análisis de criptoactivos que combina datos de mercado en tiempo real con indicadores estadísticos para ofrecerte, cada día, una lectura clara de qué puede pasar con las principales criptomonedas.</p>
+    </section>
+
+    <section class="about-grid">
+      <article class="card about-card">
+        <h3><span class="icon">🎯</span> <span data-i18n="aboutMissionTitle">Nuestra misión</span></h3>
+        <p data-i18n="aboutMissionText">Democratizar el análisis financiero cripto: traducir indicadores complejos en probabilidades y rangos fáciles de entender, para que cualquier persona pueda tomar decisiones informadas y gestionar su riesgo.</p>
+      </article>
+
+      <article class="card about-card">
+        <h3><span class="icon">🧩</span> <span data-i18n="aboutHowTitle">Qué incluye cada análisis</span></h3>
+        <ul class="reco-details">
+          <li data-i18n="aboutHow1">Análisis fundamental: sentimiento de mercado, variaciones 24h/7d, índice Miedo y Codicia y capitalización.</li>
+          <li data-i18n="aboutHow2">Análisis técnico: RSI(14), medias móviles SMA20/SMA50 y MACD calculados sobre 90 días de historial.</li>
+          <li data-i18n="aboutHow3">Probabilidad de subida y de bajada para cada análisis y una probabilidad combinada ponderada.</li>
+          <li data-i18n="aboutHow4">Rango estimado de fluctuación del día: escenarios alcista/bajista y precio esperado al cierre.</li>
+          <li data-i18n="aboutHow5">Recomendación profesional combinada (compra / mantenimiento / venta) con gráficos diario y en tiempo real.</li>
+        </ul>
+      </article>
+
+      <article class="card about-card">
+        <h3><span class="icon">🗄️</span> <span data-i18n="aboutSourcesTitle">Fuentes de datos</span></h3>
+        <p data-i18n="aboutSourcesText">CoinGecko API (precios, capitalización, volumen y sentimiento de la comunidad), Alternative.me Fear &amp; Greed Index (miedo/codicia del mercado) y TradingView (gráfico en tiempo real). Todos los cálculos se ejecutan en tu navegador, sin servidores intermedios.</p>
+      </article>
+
+      <article class="card about-card">
+        <h3><span class="icon">⚠️</span> <span data-i18n="aboutRiskTitle">Aviso de riesgo</span></h3>
+        <p data-i18n="aboutRiskText">CryptoArt no presta asesoría financiera. Los estimados se generan automáticamente a partir de modelos estadísticos y datos públicos, y no garantizan resultados. Las criptomonedas son activos volátiles: nunca inviertas más de lo que puedes permitirte perder y usa siempre stop-loss.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p><span data-i18n="footerPrefix">CryptoArt · Datos: CoinGecko API &amp; Alternative.me Fear &amp; Greed Index · Actualizado:</span> <span id="updateTime">—</span></p>
+  </footer>
+
+  <script src="js/site.js?v=2"></script>
+</body>
+</html>

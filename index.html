@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="homeTitle">CryptoArt — Inicio</title>
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body data-page="home">
+  <div class="bg-glow"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <img src="assets/logo.svg" alt="CryptoArt" class="brand-icon" width="48" height="48">
+      <div>
+        <h1>Crypto<span class="brand-accent">Art</span></h1>
+        <p class="tagline" data-i18n="homeTagline">Análisis cripto · Fundamental + Técnico</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="lang-switch" role="group" aria-label="Idioma / Language">
+        <button class="lang-btn active" id="langEs" type="button">ES</button>
+        <button class="lang-btn" id="langEn" type="button">EN</button>
+      </div>
+      <button class="theme-btn" id="themeToggle" type="button" aria-label="Cambiar tema">🌙</button>
+    </div>
+  </header>
+
+  <nav class="main-nav" aria-label="Navegación principal">
+    <a href="index.html" class="nav-link" data-i18n="navHome">Inicio</a>
+    <a href="analysis.html?coin=bitcoin" class="nav-link" data-i18n="navAnalysis">Análisis</a>
+    <a href="about.html" class="nav-link" data-i18n="navAbout">Sobre nosotros</a>
+  </nav>
+
+  <main class="container">
+    <section class="hero card">
+      <div class="status-row" id="statusRow">
+        <div class="loader"></div>
+        <p id="statusText" data-i18n="homeLoading">Cargando datos del mercado…</p>
+      </div>
+      <h2 data-i18n="homeHeroTitle">El pulso del mercado cripto hoy</h2>
+      <p class="hero-text" id="marketSummary">—</p>
+      <div class="market-stats" id="marketStats"></div>
+    </section>
+
+    <section class="home-section">
+      <h2 data-i18n="coinsTitle">Elige una cripto para analizar</h2>
+      <p class="card-desc" data-i18n="coinsDesc">Cada análisis incluye visión fundamental, visión técnica, probabilidades de subida/bajada, rango estimado del día y recomendación profesional.</p>
+      <div class="home-grid" id="coinCards"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p><span data-i18n="footerPrefix">CryptoArt · Datos: CoinGecko API &amp; Alternative.me Fear &amp; Greed Index · Actualizado:</span> <span id="updateTime">—</span></p>
+  </footer>
+
+  <script src="js/site.js?v=2"></script>
+</body>
+</html>
