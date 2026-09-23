@@ -14,7 +14,8 @@ const I18N = {
     footerPrefix: 'CryptoArt · Datos: CoinGecko API & Alternative.me Fear & Greed Index · Actualizado:',
     homeLoading: 'Cargando datos del mercado…',
     homeOk: 'Datos actualizados correctamente.',
-    homeError: '⚠️ No se pudieron cargar los datos del mercado (posible límite de la API). Recarga en unos segundos.',
+    homeError: '⚠️ No se pudieron cargar los datos del mercado (posible límite de la API). Pulsa Reintentar en unos segundos.',
+    retry: 'Reintentar',
     homeHeroTitle: 'El pulso del mercado cripto hoy',
     marketFearGreed: 'Índice Miedo/Codicia',
     marketCap: 'Cap. mercado total',
@@ -59,7 +60,8 @@ const I18N = {
     footerPrefix: 'CryptoArt · Data: CoinGecko API & Alternative.me Fear & Greed Index · Updated:',
     homeLoading: 'Loading market data…',
     homeOk: 'Data updated successfully.',
-    homeError: '⚠️ Could not load market data (possible API rate limit). Reload in a few seconds.',
+    homeError: '⚠️ Could not load market data (possible API rate limit). Press Retry in a few seconds.',
+    retry: 'Retry',
     homeHeroTitle: "Today's crypto market pulse",
     marketFearGreed: 'Fear/Greed Index',
     marketCap: 'Total market cap',
@@ -240,12 +242,57 @@ function renderHome() {
   }
 }
 
+// ---------- Fetch con reintento (cubre el rate-limit429 de CoinGecko) ----------
+async function fetchRetry(url, tries = 3) {
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (e) {
+      if (i === tries - 1) throw e;
+      await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+    }
+  }
+}
+
+function showRetry(container, onClick) {
+  if (!container) return;
+  container.querySelectorAll('.retry-btn').forEach(b => b.remove());
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'retry-btn';
+  btn.textContent = t('retry');
+  btn.addEventListener('click', () => { btn.remove(); onClick(); });
+  container.appendChild(btn);
+}
+
+function setStatusText(key) {
+  state.statusKey = key;
+  const st = document.getElementById('statusText');
+  if (st) st.textContent = t(key);
+}
+
+function loadHomeWithRetry() {
+  document.querySelector('#statusRow .loader')?.classList.remove('done');
+  document.querySelector('#statusRow')?.querySelectorAll('.retry-btn').forEach(b => b.remove());
+  setStatusText('homeLoading');
+  loadHomeData().catch(handleHomeError);
+}
+
+function handleHomeError(err) {
+  console.error(err);
+  document.querySelector('#statusRow .loader')?.classList.add('done');
+  setStatusText('homeError');
+  showRetry(document.getElementById('statusRow'), loadHomeWithRetry);
+}
+
 async function loadHomeData() {
   const ids = 'bitcoin,ethereum,solana,ripple,dogecoin';
   const [markets, fngRes, globalRes] = await Promise.all([
-    fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&price_change_percentage=24h,7d&sparkline=false`).then(r => r.json()),
-    fetch('https://api.alternative.me/fng/?limit=1').then(r => r.json()),
-    fetch('https://api.coingecko.com/api/v3/global').then(r => r.json()),
+    fetchRetry(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&price_change_percentage=24h,7d&sparkline=false`),
+    fetchRetry('https://api.alternative.me/fng/?limit=1'),
+    fetchRetry('https://api.coingecko.com/api/v3/global'),
   ]);
   if (!Array.isArray(markets) || !markets.length) throw new Error('markets vacío');
   cached.markets = markets;
@@ -272,13 +319,7 @@ function initSite() {
 
   const grid = document.getElementById('coinCards');
   if (grid) {
-    loadHomeData().catch(err => {
-      console.error(err);
-      state.statusKey = 'homeError';
-      document.querySelector('#statusRow .loader')?.classList.add('done');
-      const st = document.getElementById('statusText');
-      if (st) st.textContent = t(state.statusKey);
-    });
+    loadHomeWithRetry();
   }
 }
 

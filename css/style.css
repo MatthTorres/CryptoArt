@@ -346,6 +346,22 @@ h1, h2 { font-family: 'Sora', sans-serif; }
 
 .chart-card { margin-bottom: 24px; }
 
+/* ---------- Botón Reintentar ---------- */
+.retry-btn {
+  border: 1px solid var(--accent);
+  background: rgba(242,169,0,0.12);
+  color: var(--accent);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+.retry-btn:hover { background: rgba(242,169,0,0.22); transform: translateY(-1px); }
+
 /* ---------- Navegación principal ---------- */
 .main-nav {
   position: relative;

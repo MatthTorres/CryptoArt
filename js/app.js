@@ -66,7 +66,9 @@ const I18N = {
     priceLabel: 'Precio actual',
     statusLoading: 'Cargando datos de mercado en tiempo real…',
     statusOk: 'Análisis actualizado correctamente.',
-    statusError: '⚠️ No se pudieron cargar los datos en vivo (posible límite de la API o falta de conexión). Reintenta en unos segundos recargando la página.',
+    statusError: '⚠️ No se pudieron cargar los datos en vivo (posible límite de la API o falta de conexión). Pulsa Reintentar en unos segundos.',
+    statusLoadingCoin: 'Cargando datos de {coin}…',
+    retry: 'Reintentar',
     fundTitle: 'Análisis Fundamental',
     fundDesc: 'Sentimiento de mercado, variaciones diarias, volumen y capitalización del día.',
     techTitle: 'Análisis Técnico',
@@ -135,7 +137,9 @@ const I18N = {
     priceLabel: 'Current price',
     statusLoading: 'Loading live market data…',
     statusOk: 'Analysis updated successfully.',
-    statusError: '⚠️ Could not load live data (possible API rate limit or no connection). Try again in a few seconds by reloading the page.',
+    statusError: '⚠️ Could not load live data (possible API rate limit or no connection). Press Retry in a few seconds.',
+    statusLoadingCoin: 'Loading {coin} data…',
+    retry: 'Retry',
     fundTitle: 'Fundamental Analysis',
     fundDesc: 'Market sentiment, daily changes, volume and market cap for the day.',
     techTitle: 'Technical Analysis',
@@ -245,7 +249,7 @@ function applyLang() {
   });
   els.langEs.classList.toggle('active', state.lang === 'es');
   els.langEn.classList.toggle('active', state.lang === 'en');
-  els.statusText.textContent = t(state.statusKey);
+  els.statusText.textContent = fillText(t(state.statusKey));
   renderAnalysis();
   renderTradingView();
   if (cached.prices) renderChart(cached.prices, cached.dates);
@@ -331,23 +335,69 @@ function macd(values) {
   return { macd: macdNow, signal, histogram: macdNow - signal };
 }
 
-// ---------- Fetch de datos ----------
-async function fetchJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Error de red: ${res.status}`);
-  return res.json();
+// ---------- Fetch de datos (con reintento ante rate-limit/red) ----------
+async function fetchJSON(url, tries = 3) {
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (e) {
+      if (i === tries - 1) throw e;
+      // Espera creciente:1.5s,3s (cubre rate-limit429 de CoinGecko)
+      await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+    }
+  }
+}
+
+// Caché corta por moneda (60s) para recargas/cambios de pestaña instantáneos
+const CACHE_TTL = 60000;
+function getCached(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    return Date.now() - ts < CACHE_TTL ? data : null;
+  } catch { return null; }
+}
+function setCached(key, data) {
+  try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch { /* cuota llena */ }
+}
+
+// Botón "Reintentar" en la fila de estado
+function showRetry(container, onClick) {
+  container.querySelectorAll('.retry-btn').forEach(b => b.remove());
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'retry-btn';
+  btn.textContent = t('retry');
+  btn.addEventListener('click', () => { btn.remove(); onClick(); });
+  container.appendChild(btn);
 }
 
 async function loadMarketData() {
-  return fetchJSON(`https://api.coingecko.com/api/v3/coins/${coin.id}?localization=false&tickers=false&market_data=true&community_data=true&developer_data=false`);
+  const key = 'ca_mkt_' + coin.id;
+  const cachedData = getCached(key);
+  if (cachedData) return cachedData;
+  const data = await fetchJSON(`https://api.coingecko.com/api/v3/coins/${coin.id}?localization=false&tickers=false&market_data=true&community_data=true&developer_data=false`);
+  setCached(key, data);
+  return data;
 }
 
 async function loadHistoricalPrices() {
+  const key = 'ca_hist_' + coin.id;
+  const cachedData = getCached(key);
+  if (cachedData) {
+    return {
+      prices: cachedData,
+      dates: cachedData.map((_, i) => new Date(Date.now() - (cachedData.length - i) * 86400000)),
+    };
+  }
   const data = await fetchJSON(`https://api.coingecko.com/api/v3/coins/${coin.id}/market_chart?vs_currency=usd&days=90&interval=daily`);
-  return {
-    prices: data.prices.map(p => p[1]),
-    dates: data.prices.map(p => new Date(p[0])),
-  };
+  const prices = data.prices.map(p => p[1]);
+  const dates = data.prices.map(p => new Date(p[0]));
+  setCached(key, prices);
+  return { prices, dates };
 }
 
 async function loadFearGreed() {
@@ -703,6 +753,10 @@ function renderAnalysis() {
 // ---------- Inicialización ----------
 async function init() {
   applyTheme();
+  state.statusKey = 'statusLoadingCoin';
+  els.statusText.textContent = fillText(t(state.statusKey));
+  els.statusRow.querySelector('.loader').classList.remove('done');
+  els.statusRow.querySelectorAll('.retry-btn').forEach(b => b.remove());
   try {
     const [market, history, fng] = await Promise.all([
       loadMarketData(),
@@ -727,6 +781,7 @@ async function init() {
     state.statusKey = 'statusError';
     els.statusRow.querySelector('.loader').classList.add('done');
     els.statusText.textContent = t(state.statusKey);
+    showRetry(els.statusRow, () => init());
   }
 
   applyLang();
