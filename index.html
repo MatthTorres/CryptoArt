@@ -31,7 +31,8 @@
 
   <nav class="main-nav" aria-label="Navegación principal">
     <a href="index.html" class="nav-link" data-i18n="navHome">Inicio</a>
-    <a href="analysis.html?coin=bitcoin" class="nav-link" data-i18n="navAnalysis">Análisis</a>
+    <a href="analysis.html?coin=bitcoin" class="nav-link" data-i18n="navAnalysis">Cripto</a>
+    <a href="metals.html?asset=gold" class="nav-link" data-i18n="navMetals">Metales</a>
     <a href="about.html" class="nav-link" data-i18n="navAbout">Sobre nosotros</a>
   </nav>
 
@@ -50,6 +51,53 @@
       <h2 data-i18n="coinsTitle">Elige una cripto para analizar</h2>
       <p class="card-desc" data-i18n="coinsDesc">Cada análisis incluye visión fundamental, visión técnica, probabilidades de subida/bajada, rango estimado del día y recomendación profesional.</p>
       <div class="home-grid" id="coinCards"></div>
+    </section>
+
+    <section class="home-section">
+      <h2 data-i18n="metalsTitle">Elige un metal o energía para analizar</h2>
+      <p class="card-desc" data-i18n="metalsDesc">Mismo análisis profesional: fundamental, técnico, probabilidades, rango estimado del día y recomendación.</p>
+      <div class="home-grid" id="metalCards">
+        <a class="coin-card card" href="metals.html?asset=gold">
+          <div class="coin-card-head">
+            <img src="assets/logo-metals.svg" alt="XAU" width="40" height="40">
+            <div><h3>Oro</h3><span class="coin-sym">XAU</span></div>
+          </div>
+          <p class="coin-trend" data-i18n="metalGold">Metal refugio por excelencia.</p>
+          <span class="coin-cta" data-i18n="btnAnalysis">Ver análisis completo →</span>
+        </a>
+        <a class="coin-card card" href="metals.html?asset=silver">
+          <div class="coin-card-head">
+            <img src="assets/logo-metals.svg" alt="XAG" width="40" height="40">
+            <div><h3>Plata</h3><span class="coin-sym">XAG</span></div>
+          </div>
+          <p class="coin-trend" data-i18n="metalSilver">Industrial y refugio a la vez.</p>
+          <span class="coin-cta" data-i18n="btnAnalysis">Ver análisis completo →</span>
+        </a>
+        <a class="coin-card card" href="metals.html?asset=platinum">
+          <div class="coin-card-head">
+            <img src="assets/logo-metals.svg" alt="XPT" width="40" height="40">
+            <div><h3>Platino</h3><span class="coin-sym">XPT</span></div>
+          </div>
+          <p class="coin-trend" data-i18n="metalPlatinum">Usado en catalizadores y joyería.</p>
+          <span class="coin-cta" data-i18n="btnAnalysis">Ver análisis completo →</span>
+        </a>
+        <a class="coin-card card" href="metals.html?asset=palladium">
+          <div class="coin-card-head">
+            <img src="assets/logo-metals.svg" alt="XPD" width="40" height="40">
+            <div><h3>Paladio</h3><span class="coin-sym">XPD</span></div>
+          </div>
+          <p class="coin-trend" data-i18n="metalPalladium">El metal más raro de los preciosos.</p>
+          <span class="coin-cta" data-i18n="btnAnalysis">Ver análisis completo →</span>
+        </a>
+        <a class="coin-card card" href="metals.html?asset=oil">
+          <div class="coin-card-head">
+            <img src="assets/logo-metals.svg" alt="CL" width="40" height="40">
+            <div><h3>Petróleo WTI</h3><span class="coin-sym">CL</span></div>
+          </div>
+          <p class="coin-trend" data-i18n="metalOil">La materia prima energética más operada.</p>
+          <span class="coin-cta" data-i18n="btnAnalysis">Ver análisis completo →</span>
+        </a>
+      </div>
     </section>
   </main>
 
