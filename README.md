@@ -6,7 +6,7 @@ Plataforma web de **análisis diario multi-activo (cripto, metales y divisas)** 
 
 - **Cripto**: BTC, ETH, SOL, XRP y DOGE — cada uno con su análisis completo.
 - **Metales y energía**: Oro, Plata, Platino, Paladio y Petróleo WTI.
-- **Divisas**: EUR/USD, GBP/USD, USD/JPY, USD/COP y USD/MXN.
+- **Divisas**: EUR/USD, GBP/USD, USD/JPY, USD/COP y USD/MXN, con botón **⇄ de inversión** para verlos al revés (USD/EUR, USD/GBP, JPY/USD, COP/USD, MXN/USD).
 - **Análisis fundamental**: sentimiento de mercado, variaciones 24h/7d, índice Miedo & Codicia y capitalización.
 - **Análisis técnico**: RSI(14), medias móviles SMA20/SMA50 y MACD calculados en el navegador sobre 90 días de historial.
 - **Probabilidades** de subida y bajada para cada análisis + probabilidad combinada ponderada.
@@ -22,7 +22,7 @@ Plataforma web de **análisis diario multi-activo (cripto, metales y divisas)** 
 ├── index.html        # Home con resumen del mercado (cripto + accesos metales/forex)
 ├── analysis.html     # Análisis cripto ( ?coin=bitcoin|ethereum|solana|ripple|dogecoin )
 ├── metals.html       # Análisis metales/energía ( ?asset=gold|silver|platinum|palladium|oil )
-├── forex.html        # Análisis divisas ( ?pair=eurusd|gbpusd|usdjpy|usdcop|usdmxn )
+├── forex.html        # Análisis divisas ( ?pair=eurusd|gbpusd|usdjpy|usdcop|usdmxn [&inv=1 invierte] )
 ├── about.html        # Sobre nosotros
 ├── legal.html        # Políticas de uso y liberación de responsabilidad
 ├── css/style.css     # Estilos + temas claro/oscuro
@@ -65,14 +65,14 @@ Es una web **100% estática** (sin backend). Opciones gratuitas:
 | --- | --- |
 | Cripto (`js/app.js`) | `BINANCE:BTCUSDT`, `ETHUSDT`, `SOLUSDT`, `XRPUSDT`, `DOGEUSDT` |
 | Metales (`js/metals.js`) | `OANDA:XAUUSD`, `OANDA:XAGUSD`, `OANDA:XPTUSD`, `OANDA:XPDUSD`, `NYMEX:CL1!` |
-| Divisas (`js/forex.js`) | `OANDA:EURUSD`, `OANDA:GBPUSD`, `OANDA:USDJPY`, `OANDA:USDMXN`, `FX_IDC:USDCOP` |
+| Divisas (`js/forex.js`) | `OANDA:EURUSD`, `OANDA:GBPUSD`, `OANDA:USDJPY`, `OANDA:USDMXN`, `FX_IDC:USDCOP` (invertidos: `FX_IDC:USDEUR`, `USDGBP`, `JPYUSD`, `COPUSD`, `MXNUSD`) |
 
 Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publica ese activo en TradingView: verifica el prefijo correcto (`OANDA`, `FX_IDC` = datos de ICE, `NYMEX`, `BINANCE`) en `https://www.tradingview.com/symbols/<SÍMBOLO>/`.
 
 ## 🧾 Políticas de uso y versión
 
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
-- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.1.2**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`.
+- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.2.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
 - **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.
 

@@ -486,6 +486,41 @@ h1, h2 { font-family: 'Sora', sans-serif; }
   -webkit-text-fill-color: transparent;
   color: transparent;
 }
+/* Divisas: banner + botón de inversión en la misma fila */
+.coin-banner.has-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ---------- Botón de inversión de par (EUR/USD <-> USD/EUR) ---------- */
+.invert-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--text-1);
+  -webkit-text-fill-color: var(--text-1);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, transform 0.15s;
+}
+.invert-btn:hover { border-color: var(--accent); color: var(--text-0); -webkit-text-fill-color: var(--text-0); transform: translateY(-1px); }
+.invert-btn.active {
+  background: linear-gradient(135deg, var(--accent), #ffd166);
+  border-color: transparent;
+  color: #1a1200;
+  -webkit-text-fill-color: #1a1200;
+  box-shadow: 0 6px 18px rgba(242,169,0,0.3);
+}
 
 .hero { margin-bottom: 28px; }
 .hero h2 { font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: 12px; }
