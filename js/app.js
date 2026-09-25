@@ -340,22 +340,40 @@ function macd(values) {
 }
 
 // ---------- Fetch de datos (con reintento ante rate-limit/red) ----------
-async function fetchJSON(url, tries = 3) {
+// CoinGecko permite ~10-30 req/min en plan gratuito. Al pedir 3 endpoints en
+// paralelo con Promise.all, si UNO falla (429) todo falla. Por eso:
+//  - Promise.allSettled para no tumbar todo por un endpoint.
+//  - Backoff con jitter + respeto a Retry-After.
+//  - Los endpoints criticos (market, history) reintentan mas; F&G es opcional.
+async function fetchJSON(url, tries = 5, baseDelay = 2000) {
+  let lastErr = null;
   for (let i = 0; i < tries; i++) {
     try {
       const res = await fetch(url);
+      if (res.status === 429) {
+        const retryAfter = Number(res.headers.get('Retry-After'));
+        const wait = Number.isFinite(retryAfter) && retryAfter > 0
+          ? retryAfter * 1000
+          : baseDelay * Math.pow(2, i) + Math.random() * 1000;
+        await new Promise(r => setTimeout(r, wait));
+        continue;
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {
+      lastErr = e;
       if (i === tries - 1) throw e;
-      // Espera creciente:1.5s,3s (cubre rate-limit429 de CoinGecko)
-      await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+      // Espera creciente con jitter: 2s, 4s, 8s, 16s (cubre rate-limit 429 de CoinGecko)
+      await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i) + Math.random() * 1000));
     }
   }
+  throw lastErr || new Error('fetch failed');
 }
 
-// Caché corta por moneda (60s) para recargas/cambios de pestaña instantáneos
-const CACHE_TTL = 60000;
+// Caché corta por moneda (5 min) + caché backup (24h) para recargas/cambios
+// de pestaña instantáneos y para operar degradado si la API da 429.
+const CACHE_TTL = 5 * 60 * 1000;
+const CACHE_BACKUP_TTL = 24 * 60 * 60 * 1000;
 function getCached(key) {
   try {
     const raw = sessionStorage.getItem(key);
@@ -366,6 +384,18 @@ function getCached(key) {
 }
 function setCached(key, data) {
   try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch { /* cuota llena */ }
+}
+// Backup persistente (localStorage): permite render degradado aunque la API falle.
+function getBackup(key) {
+  try {
+    const raw = localStorage.getItem('backup_' + key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    return Date.now() - ts < CACHE_BACKUP_TTL ? data : null;
+  } catch { return null; }
+}
+function setBackup(key, data) {
+  try { localStorage.setItem('backup_' + key, JSON.stringify({ ts: Date.now(), data })); } catch { /* cuota llena */ }
 }
 
 // Botón "Reintentar" en la fila de estado
@@ -383,9 +413,16 @@ async function loadMarketData() {
   const key = 'ca_mkt_' + coin.id;
   const cachedData = getCached(key);
   if (cachedData) return cachedData;
-  const data = await fetchJSON(`https://api.coingecko.com/api/v3/coins/${coin.id}?localization=false&tickers=false&market_data=true&community_data=true&developer_data=false`);
-  setCached(key, data);
-  return data;
+  try {
+    const data = await fetchJSON(`https://api.coingecko.com/api/v3/coins/${coin.id}?localization=false&tickers=false&market_data=true&community_data=true&developer_data=false`);
+    setCached(key, data);
+    setBackup(key, data);
+    return data;
+  } catch (e) {
+    const backup = getBackup(key);
+    if (backup) { setCached(key, backup); return backup; }
+    throw e;
+  }
 }
 
 async function loadHistoricalPrices() {
@@ -397,16 +434,32 @@ async function loadHistoricalPrices() {
       dates: cachedData.map((_, i) => new Date(Date.now() - (cachedData.length - i) * 86400000)),
     };
   }
-  const data = await fetchJSON(`https://api.coingecko.com/api/v3/coins/${coin.id}/market_chart?vs_currency=usd&days=90&interval=daily`);
-  const prices = data.prices.map(p => p[1]);
-  const dates = data.prices.map(p => new Date(p[0]));
-  setCached(key, prices);
-  return { prices, dates };
+  try {
+    const data = await fetchJSON(`https://api.coingecko.com/api/v3/coins/${coin.id}/market_chart?vs_currency=usd&days=90&interval=daily`);
+    const prices = data.prices.map(p => p[1]);
+    const dates = data.prices.map(p => new Date(p[0]));
+    setCached(key, prices);
+    setBackup(key, prices);
+    return { prices, dates };
+  } catch (e) {
+    const backup = getBackup(key);
+    if (backup) {
+      setCached(key, backup);
+      return {
+        prices: backup,
+        dates: backup.map((_, i) => new Date(Date.now() - (backup.length - i) * 86400000)),
+      };
+    }
+    throw e;
+  }
 }
 
 async function loadFearGreed() {
-  const data = await fetchJSON('https://api.alternative.me/fng/?limit=1');
-  return data.data[0];
+  // Opcional: si falla, el análisis sigue (fng = null).
+  try {
+    const data = await fetchJSON('https://api.alternative.me/fng/?limit=1', 2, 1500);
+    return data.data[0];
+  } catch { return null; }
 }
 
 // ---------- Serie de SMA para el gráfico ----------
@@ -509,16 +562,18 @@ function analyzeFundamental(market, fng) {
   const marketCap = md.market_cap.usd;
   const volMcapRatio = (volume24h / marketCap) * 100;
   const sentimentUp = market.sentiment_votes_up_percentage ?? 50;
-  const fngValue = Number(fng.value);
-  const fngLabel = fng.value_classification;
+  const fngValue = fng ? Number(fng.value) : 50;
+  const fngLabel = fng ? fng.value_classification : (state.lang === 'es' ? 'Neutral' : 'Neutral');
 
   let score = 50;
   score += clamp(change24h, -10, 10) * 1.5;
   score += clamp(change7d, -20, 20) * 0.6;
   score += (sentimentUp - 50) * 0.4;
-  if (fngValue <= 25) score += 6;
-  else if (fngValue >= 75) score -= 6;
-  else score += (fngValue - 50) * 0.15;
+  if (fng) {
+    if (fngValue <= 25) score += 6;
+    else if (fngValue >= 75) score -= 6;
+    else score += (fngValue - 50) * 0.15;
+  }
 
   const upProb = clamp(Math.round(score), 5, 95);
   const downProb = 100 - upProb;
@@ -755,6 +810,8 @@ function renderAnalysis() {
 }
 
 // ---------- Inicialización ----------
+// Secuencial + tolerante: carga primero lo crítico (market+history en paralelo)
+// y Fear&Greed aparte como opcional, para que un 429 no tumbe toda la página.
 async function init() {
   applyTheme();
   state.statusKey = 'statusLoadingCoin';
@@ -762,11 +819,14 @@ async function init() {
   els.statusRow.querySelector('.loader').classList.remove('done');
   els.statusRow.querySelectorAll('.retry-btn').forEach(b => b.remove());
   try {
-    const [market, history, fng] = await Promise.all([
-      loadMarketData(),
-      loadHistoricalPrices(),
-      loadFearGreed(),
-    ]);
+    const results = await Promise.allSettled([loadMarketData(), loadHistoricalPrices()]);
+    const [marketRes, historyRes] = results;
+    if (marketRes.status === 'rejected' || historyRes.status === 'rejected') {
+      throw marketRes.status === 'rejected' ? marketRes.reason : historyRes.reason;
+    }
+    const market = marketRes.value;
+    const history = historyRes.value;
+    const fng = await loadFearGreed(); // null si falla -> análisis sigue igual
     cached.market = market;
     cached.prices = history.prices;
     cached.dates = history.dates;
