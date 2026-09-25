@@ -415,8 +415,11 @@ async function loadHomeData() {
 }
 
 // ---------- Home: titular rotatorio (cripto → metales → divisas) ----------
-const HERO_SLIDE_INTERVAL = 30000; // cada 30 s cambia de titular
-const heroSlider = { timer: null, paused: false };
+// El contador SOLO avanza cuando el usuario está quieto: cualquier interacción
+// (mover el ratón, hacer scroll, clic, teclado o volver a la pestaña) marca actividad
+// y el cambio se pospone, de modo que el titular no cambia mientras se lee la página.
+const HERO_SLIDE_INTERVAL = 30000; // 30 s de inactividad antes de cambiar de titular
+const heroSlider = { timer: null, paused: false, lastActivity: 0 };
 
 function heroSlideEls() {
   return Array.from(document.querySelectorAll('#heroRotator .hero-slide'));
@@ -482,14 +485,34 @@ function heroAdvance(step) {
 }
 function heroStopAuto() {
   if (heroSlider.timer) {
-    window.clearInterval(heroSlider.timer);
+    window.clearTimeout(heroSlider.timer);
     heroSlider.timer = null;
   }
 }
+// Arranca (o reinicia) el ciclo de rotación.
 function heroStartAuto() {
   heroStopAuto();
   if (heroSlider.paused || heroSlideEls().length < 2) return;
-  heroSlider.timer = window.setInterval(() => heroAdvance(1), HERO_SLIDE_INTERVAL);
+  heroSlider.lastActivity = Date.now();
+  heroSlider.timer = window.setTimeout(heroTick, HERO_SLIDE_INTERVAL);
+}
+// Un único temporizador comprueba el tiempo de inactividad en cada tic:
+// si el usuario se movió, NO cambia el titular y se reprograma por el tiempo
+// restante; si lleva el intervalo completo quieto, avanza y arranca el siguiente ciclo.
+function heroTick() {
+  const idle = Date.now() - heroSlider.lastActivity;
+  if (idle < HERO_SLIDE_INTERVAL) {
+    heroSlider.timer = window.setTimeout(heroTick, HERO_SLIDE_INTERVAL - idle);
+    return;
+  }
+  heroAdvance(1);
+  heroStartAuto();
+}
+// Actividad del usuario: solo marca la hora (barato, sin tocar el temporizador).
+// Así el tic decide si ya pasó el intervalo de inactividad.
+function heroNoteActivity() {
+  if (heroSlider.paused) return;
+  heroSlider.lastActivity = Date.now();
 }
 function heroToggleAuto() {
   heroSlider.paused = !heroSlider.paused;
@@ -535,13 +558,20 @@ function initHeroSlider() {
   rotator.addEventListener('mouseenter', heroStopAuto);
   rotator.addEventListener('mouseleave', heroStartAuto);
 
-  // Respeta la preferencia de movimiento reducido: sin auto-avance.
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    heroSlider.paused = true;
-    heroUpdateLabels();
-  } else {
-    heroStartAuto();
-  }
+  // La cuenta atrás se reinicia con cualquier actividad: si el usuario está
+  // leyendo o navegando, el titular no cambia hasta que lleve 30 s quieto.
+  ['pointermove', 'pointerdown', 'keydown', 'wheel', 'scroll'].forEach(evt => {
+    window.addEventListener(evt, heroNoteActivity, { passive: true, capture: true });
+  });
+  // Al volver a la pestaña se concede el intervalo completo otra vez.
+  const heroResume = () => { if (!document.hidden && !heroSlider.paused) heroStartAuto(); };
+  document.addEventListener('visibilitychange', heroResume);
+  window.addEventListener('focus', heroResume);
+
+  // "Reducir movimiento": el titular sigue cambiando, pero sin deslizamiento.
+  // El bloque @media prefers-reduced-motion de style.css ya lo resuelve con un
+  // fundido de opacidad, así que aquí solo se mantiene la rotación activa.
+  heroStartAuto();
 }
 
 // ---------- Init ----------
