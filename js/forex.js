@@ -1,5 +1,5 @@
 // ==========================================================
-// FiatPulse — Análisis de Divisas (Euro, Dolar, Peso COP, Libra, Yen)
+// MarketPulse — Análisis de Divisas (Euro, Dolar, Peso COP, Libra, Yen)
 // Fuentes: Yahoo Finance (vía proxy AllOrigins) para historial y cotizaciones
 // ==========================================================
 
@@ -52,7 +52,7 @@ const els = {
 // ---------- Internacionalización (ES / EN) ----------
 const I18N = {
   es: {
-    docTitle: 'FiatPulse — Análisis de {coin}',
+    docTitle: 'MarketPulse — Análisis de {coin}',
     tagline: 'Análisis diario de divisas',
     priceLabel: 'Precio actual',
     statusLoading: 'Cargando datos del mercado en tiempo real…',
@@ -79,7 +79,7 @@ const I18N = {
     combinedLabel: 'Prob. Subida Combinada',
     summaryPlaceholder: 'Analizando ambos enfoques para generar una recomendación…',
     disclaimer: '⚠️ Este análisis se genera automáticamente a partir de datos públicos (Yahoo Finance vía proxy, gold-api.com) e indicadores estadísticos. No constituye asesoría financiera. Las inversiones en divisas conllevan alto riesgo.',
-    footerPrefix: 'FiatPulse · Datos: Yahoo Finance & TradingView · Actualizado:',
+    footerPrefix: 'MarketPulse · Datos: Yahoo Finance & TradingView · Actualizado:',
     m24h: 'Variación 24h',
     m7d: 'Variación 7 días',
     m30d: 'Variación 30 días',
@@ -121,7 +121,7 @@ const I18N = {
     rangeClosePrice: 'Precio esperado al cierre de hoy',
   },
   en: {
-    docTitle: 'FiatPulse — {coin} Analysis',
+    docTitle: 'MarketPulse — {coin} Analysis',
     tagline: 'Daily forex analysis',
     priceLabel: 'Current price',
     statusLoading: 'Loading live market data…',
@@ -148,7 +148,7 @@ const I18N = {
     combinedLabel: 'Combined Up Probability',
     summaryPlaceholder: 'Analyzing both approaches to generate a recommendation…',
     disclaimer: '⚠️ This analysis is generated automatically from public data (Yahoo Finance via proxy, gold-api.com) and statistical indicators. It does not constitute financial advice. Currency investments carry high risk.',
-    footerPrefix: 'FiatPulse · Data: Yahoo Finance & TradingView · Updated:',
+    footerPrefix: 'MarketPulse · Data: Yahoo Finance & TradingView · Updated:',
     m24h: '24h change',
     m7d: '7-day change',
     m30d: '30-day change',

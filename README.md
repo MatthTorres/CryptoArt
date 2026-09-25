@@ -1,10 +1,12 @@
-# 🎨 CryptoArt
+# 📊 MarketPulse
 
-Plataforma web de **análisis diario de criptomonedas** con visión fundamental, visión técnica, probabilidades de subida/bajada, rango estimado de fluctuación del día y recomendación profesional.
+Plataforma web de **análisis diario multi-activo (cripto, metales y divisas)** con visión fundamental, visión técnica, probabilidades de subida/bajada, rango estimado de fluctuación del día y recomendación profesional.
 
 ## ✨ Características
 
-- **5 pestañas de criptoactivos**: BTC, ETH, SOL, XRP y DOGE — cada uno con su análisis completo.
+- **Cripto**: BTC, ETH, SOL, XRP y DOGE — cada uno con su análisis completo.
+- **Metales y energía**: Oro, Plata, Platino, Paladio y Petróleo WTI.
+- **Divisas**: EUR/USD, GBP/USD, USD/JPY, USD/COP y USD/MXN.
 - **Análisis fundamental**: sentimiento de mercado, variaciones 24h/7d, índice Miedo & Codicia y capitalización.
 - **Análisis técnico**: RSI(14), medias móviles SMA20/SMA50 y MACD calculados en el navegador sobre 90 días de historial.
 - **Probabilidades** de subida y bajada para cada análisis + probabilidad combinada ponderada.
@@ -17,13 +19,17 @@ Plataforma web de **análisis diario de criptomonedas** con visión fundamental,
 ## 📄 Estructura
 
 ```
-├── index.html        # Home con resumen del mercado
-├── analysis.html     # Análisis completo ( ?coin=bitcoin|ethereum|solana|ripple|dogecoin )
+├── index.html        # Home con resumen del mercado (cripto + accesos metales/forex)
+├── analysis.html     # Análisis cripto ( ?coin=bitcoin|ethereum|solana|ripple|dogecoin )
+├── metals.html       # Análisis metales/energía ( ?asset=gold|silver|platinum|palladium|oil )
+├── forex.html        # Análisis divisas ( ?pair=eurusd|gbpusd|usdjpy|usdcop|usdmxn )
 ├── about.html        # Sobre nosotros
 ├── css/style.css     # Estilos + temas claro/oscuro
-├── js/app.js         # Lógica de análisis y gráficos
+├── js/app.js         # Lógica de análisis cripto y gráficos
+├── js/metals.js      # Lógica de análisis metales/energía
+├── js/forex.js       # Lógica de análisis divisas
 ├── js/site.js        # Home/About: tema, idioma y datos de mercado
-└── assets/logo.svg   # Logo
+└── assets/logo-marketpulse.svg   # Logo global
 ```
 
 ## 🚀 Ejecutar en local
@@ -44,10 +50,11 @@ Es una web **100% estática** (sin backend). Opciones gratuitas:
 
 ## 🗄️ Fuentes de datos
 
-- [CoinGecko API](https://www.coingecko.com/en/api) — precios, capitalización, volumen y sentimiento de la comunidad
-- [Alternative.me Fear & Greed Index](https://alternative.me/crypto/fear-and-greed-index/) — miedo/codicia del mercado
+- [CoinGecko API](https://www.coingecko.com/en/api) — cripto: precios, capitalización, volumen y sentimiento
+- [Yahoo Finance](https://finance.yahoo.com/) — metales, energía y divisas (vía proxy)
+- [Alternative.me Fear & Greed Index](https://alternative.me/crypto/fear-and-greed-index/) — miedo/codicia cripto
 - [TradingView](https://www.tradingview.com/) — gráfico en tiempo real
 
 ## ⚠️ Aviso de riesgo
 
-CryptoArt **no presta asesoría financiera**. Los estimados se generan automáticamente a partir de modelos estadísticos y datos públicos, y no garantizan resultados. Las criptomonedas son activos volátiles: nunca inviertas más de lo que puedes permitirte perder.
+MarketPulse **no presta asesoría financiera**. Los estimados se generan automáticamente a partir de modelos estadísticos y datos públicos, y no garantizan resultados. Cripto, metales y divisas son activos volátiles: nunca inviertas más de lo que puedes permitirte perder.

@@ -1,5 +1,5 @@
 // ==========================================================
-// CryptoArt — Análisis Fundamental + Técnico de Bitcoin
+// MarketPulse — Análisis Fundamental + Técnico multi-activo (Cripto)
 // Fuentes: CoinGecko API (precios/mercado) y Alternative.me (Fear & Greed)
 // ==========================================================
 
@@ -58,7 +58,7 @@ const els = {
 // ---------- Internacionalización (ES / EN) ----------
 const I18N = {
   es: {
-    docTitle: 'CryptoArt — Análisis Diario de {coin}',
+    docTitle: 'MarketPulse — Análisis Diario de {coin}',
     tagline: 'Análisis diario de {coin} · Fundamental + Técnico',
     navHome: 'Inicio',
     navAnalysis: 'Cripto',
@@ -89,7 +89,7 @@ const I18N = {
     combinedLabel: 'Prob. Subida Combinada',
     summaryPlaceholder: 'Analizando ambos enfoques para generar una recomendación…',
     disclaimer: '⚠️ Este análisis se genera automáticamente a partir de datos públicos (CoinGecko, Alternative.me) e indicadores estadísticos. No constituye asesoría financiera. Las inversiones en criptoactivos conllevan alto riesgo.',
-    footerPrefix: 'CryptoArt · Datos: CoinGecko API & Alternative.me Fear & Greed Index · Actualizado:',
+    footerPrefix: 'MarketPulse · Datos: CoinGecko API & Alternative.me Fear & Greed Index · Actualizado:',
     m24h: 'Variación 24h',
     m7d: 'Variación 7 días',
     mFng: 'Índice Miedo/Codicia',
@@ -131,7 +131,7 @@ const I18N = {
     summaryText: 'Combinando el análisis fundamental ({fu}% de probabilidad de subida) con el análisis técnico ({tu}% de probabilidad de subida), el modelo estima una probabilidad combinada de subida del {cu}% para hoy, {date}. Recomendación profesional: {reco}.',
   },
   en: {
-    docTitle: 'CryptoArt — Daily {coin} Analysis',
+    docTitle: 'MarketPulse — Daily {coin} Analysis',
     tagline: 'Daily {coin} analysis · Fundamental + Technical',
     navHome: 'Home',
     navAnalysis: 'Crypto',
@@ -162,7 +162,7 @@ const I18N = {
     combinedLabel: 'Combined Up Probability',
     summaryPlaceholder: 'Analyzing both approaches to generate a recommendation…',
     disclaimer: '⚠️ This analysis is generated automatically from public data (CoinGecko, Alternative.me) and statistical indicators. It does not constitute financial advice. Cryptoasset investments carry high risk.',
-    footerPrefix: 'CryptoArt · Data: CoinGecko API & Alternative.me Fear & Greed Index · Updated:',
+    footerPrefix: 'MarketPulse · Data: CoinGecko API & Alternative.me Fear & Greed Index · Updated:',
     m24h: '24h change',
     m7d: '7-day change',
     mFng: 'Fear/Greed Index',

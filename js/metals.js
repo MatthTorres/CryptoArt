@@ -1,5 +1,5 @@
 // ==========================================================
-// MetalPulse — Análisis de Metales y Energía (Oro, Plata, Platino, Paladio, Petróleo)
+// MarketPulse — Análisis de Metales y Energía (Oro, Plata, Platino, Paladio, Petróleo)
 // Fuentes: Yahoo Finance (vía proxy AllOrigins) para historial + gold-api.com para spot
 // ==========================================================
 
@@ -52,7 +52,7 @@ const els = {
 // ---------- Internacionalización (ES / EN) ----------
 const I18N = {
   es: {
-    docTitle: 'MetalPulse — Análisis de {coin}',
+    docTitle: 'MarketPulse — Análisis de {coin}',
     tagline: 'Análisis diario de metales y energía',
     priceLabel: 'Precio actual',
     statusLoading: 'Cargando datos del mercado en tiempo real…',
@@ -79,7 +79,7 @@ const I18N = {
     combinedLabel: 'Prob. Subida Combinada',
     summaryPlaceholder: 'Analizando ambos enfoques para generar una recomendación…',
     disclaimer: '⚠️ Este análisis se genera automáticamente a partir de datos públicos (Yahoo Finance vía proxy, gold-api.com) e indicadores estadísticos. No constituye asesoría financiera. Las inversiones en materias primas conllevan alto riesgo.',
-    footerPrefix: 'MetalPulse · Datos: Yahoo Finance, gold-api.com & TradingView · Actualizado:',
+    footerPrefix: 'MarketPulse · Datos: Yahoo Finance, gold-api.com & TradingView · Actualizado:',
     m24h: 'Variación 24h',
     m7d: 'Variación 7 días',
     m30d: 'Variación 30 días',
@@ -121,7 +121,7 @@ const I18N = {
     rangeClosePrice: 'Precio esperado al cierre de hoy',
   },
   en: {
-    docTitle: 'MetalPulse — {coin} Analysis',
+    docTitle: 'MarketPulse — {coin} Analysis',
     tagline: 'Daily metals and energy analysis',
     priceLabel: 'Current price',
     statusLoading: 'Loading live market data…',
@@ -148,7 +148,7 @@ const I18N = {
     combinedLabel: 'Combined Up Probability',
     summaryPlaceholder: 'Analyzing both approaches to generate a recommendation…',
     disclaimer: '⚠️ This analysis is generated automatically from public data (Yahoo Finance via proxy, gold-api.com) and statistical indicators. It does not constitute financial advice. Commodity investments carry high risk.',
-    footerPrefix: 'MetalPulse · Data: Yahoo Finance, gold-api.com & TradingView · Updated:',
+    footerPrefix: 'MarketPulse · Data: Yahoo Finance, gold-api.com & TradingView · Updated:',
     m24h: '24h change',
     m7d: '7-day change',
     m30d: '30-day change',
