@@ -4,11 +4,14 @@
 // ==========================================================
 
 // ---------- Configuración de activos (5 pestañas) ----------
+// tv: identificador exacto de TradingView. Los símbolos spot de metales usan el
+// proveedor OANDA (canónico en TradingView); un prefijo inexistente hace que el
+// widget muestre «Este símbolo no existe».
 const ASSETS = {
-  gold:      { id: 'gold',      name: 'Oro',          nameEn: 'Gold',      symbol: 'XAU', yahoo: 'GC=F',  tv: 'FOREXCOM:XAUUSD' },
-  silver:    { id: 'silver',    name: 'Plata',        nameEn: 'Silver',    symbol: 'XAG', yahoo: 'SI=F',  tv: 'FOREXCOM:XAGUSD' },
-  platinum:  { id: 'platinum',  name: 'Platino',      nameEn: 'Platinum',  symbol: 'XPT', yahoo: 'PL=F',  tv: 'FOREXCOM:XPTUSD' },
-  palladium: { id: 'palladium', name: 'Paladio',      nameEn: 'Palladium', symbol: 'XPD', yahoo: 'PA=F',  tv: 'FOREXCOM:XPDUSD' },
+  gold:      { id: 'gold',      name: 'Oro',          nameEn: 'Gold',      symbol: 'XAU', yahoo: 'GC=F',  tv: 'OANDA:XAUUSD' },
+  silver:    { id: 'silver',    name: 'Plata',        nameEn: 'Silver',    symbol: 'XAG', yahoo: 'SI=F',  tv: 'OANDA:XAGUSD' },
+  platinum:  { id: 'platinum',  name: 'Platino',      nameEn: 'Platinum',  symbol: 'XPT', yahoo: 'PL=F',  tv: 'OANDA:XPTUSD' },
+  palladium: { id: 'palladium', name: 'Paladio',      nameEn: 'Palladium', symbol: 'XPD', yahoo: 'PA=F',  tv: 'OANDA:XPDUSD' },
   oil:       { id: 'oil',       name: 'Petróleo WTI', nameEn: 'WTI Oil',   symbol: 'CL',  yahoo: 'CL=F',  tv: 'NYMEX:CL1!' },
 };
 

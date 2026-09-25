@@ -4,9 +4,11 @@
 // ==========================================================
 
 // ---------- Configuración de pares (5 pestañas) ----------
+// tv: identificador exacto de TradingView. USD/COP solo existe con el proveedor
+// ICE (FX_IDC), no con OANDA; un símbolo inexistente muestra «Este símbolo no existe».
 const PAIRS = {
   eurusd:  { id: 'eurusd',  name: 'Euro / Dólar',   nameEn: 'Euro / US Dollar',    symbol: 'EURUSD', yahoo: 'EURUSD=X', tv: 'OANDA:EURUSD' },
-  usdcop:  { id: 'usdcop',  name: 'Dólar / Peso COP', nameEn: 'US Dollar / Colombian Peso', symbol: 'USDCOP', yahoo: 'COP=X',    tv: 'OANDA:USDCOP' },
+  usdcop:  { id: 'usdcop',  name: 'Dólar / Peso COP', nameEn: 'US Dollar / Colombian Peso', symbol: 'USDCOP', yahoo: 'COP=X',    tv: 'FX_IDC:USDCOP' },
   gbpusd:  { id: 'gbpusd',  name: 'Libra / Dólar',  nameEn: 'British Pound / US Dollar',     symbol: 'GBPUSD', yahoo: 'GBPUSD=X', tv: 'OANDA:GBPUSD' },
   usdjpy:  { id: 'usdjpy',  name: 'Dólar / Yen',    nameEn: 'US Dollar / Japanese Yen',       symbol: 'USDJPY', yahoo: 'JPY=X',    tv: 'OANDA:USDJPY' },
   usdmxn:  { id: 'usdmxn',  name: 'Dólar / Peso MXN', nameEn: 'US Dollar / Mexican Peso',     symbol: 'USDMXN', yahoo: 'MXN=X',    tv: 'OANDA:USDMXN' },
