@@ -24,7 +24,11 @@ const I18N = {
     homeOk: 'Datos actualizados correctamente.',
     homeError: '⚠️ No se pudieron cargar los datos del mercado (posible límite de la API). Pulsa Reintentar en unos segundos.',
     retry: 'Reintentar',
-    homeHeroTitle: 'El pulso del mercado hoy: cripto, metales y divisas',
+    homeHeroCrypto: 'El pulso del mercado cripto hoy',
+    homeHeroMetals: 'El pulso del mercado de metales hoy',
+    homeHeroForex: 'El pulso del mercado de divisas hoy',
+    heroPause: 'Pausar la rotación automática',
+    heroPlay: 'Reanudar la rotación automática',
     marketFearGreed: 'Índice Miedo/Codicia',
     marketCap: 'Cap. mercado total',
     marketDominance: 'Dominancia BTC',
@@ -118,7 +122,11 @@ const I18N = {
     homeOk: 'Data updated successfully.',
     homeError: '⚠️ Could not load market data (possible API rate limit). Press Retry in a few seconds.',
     retry: 'Retry',
-    homeHeroTitle: "Today's market pulse: crypto, metals and forex",
+    homeHeroCrypto: 'The pulse of the crypto market today',
+    homeHeroMetals: 'The pulse of the metals market today',
+    homeHeroForex: 'The pulse of the forex market today',
+    heroPause: 'Pause automatic rotation',
+    heroPlay: 'Resume automatic rotation',
     marketFearGreed: 'Fear/Greed Index',
     marketCap: 'Total market cap',
     marketDominance: 'BTC dominance',
@@ -253,6 +261,7 @@ function applyLang() {
     a.classList.toggle('active', active);
   });
   renderHome();
+  heroUpdateLabels();
   if (typeof stampVersionFooter === 'function') stampVersionFooter();
 }
 function setLang(lang) {
@@ -405,6 +414,136 @@ async function loadHomeData() {
   renderHome();
 }
 
+// ---------- Home: titular rotatorio (cripto → metales → divisas) ----------
+const HERO_SLIDE_INTERVAL = 30000; // cada 30 s cambia de titular
+const heroSlider = { timer: null, paused: false };
+
+function heroSlideEls() {
+  return Array.from(document.querySelectorAll('#heroRotator .hero-slide'));
+}
+function heroDotEls() {
+  return Array.from(document.querySelectorAll('#heroDots .hero-dot'));
+}
+function heroActiveIndex() {
+  const i = heroSlideEls().findIndex(el => el.classList.contains('is-active'));
+  return i < 0 ? 0 : i;
+}
+
+// Etiquetas accesibles de los puntos y del botón de pausa (según el idioma).
+function heroUpdateLabels() {
+  const keys = ['navAnalysis', 'navMetals', 'navForex'];
+  heroDotEls().forEach((dot, i) => {
+    if (!keys[i]) return;
+    dot.setAttribute('aria-label', t(keys[i]));
+    dot.setAttribute('title', t(keys[i]));
+  });
+  const pause = document.getElementById('heroPause');
+  if (pause) {
+    const label = t(heroSlider.paused ? 'heroPlay' : 'heroPause');
+    pause.setAttribute('aria-label', label);
+    pause.setAttribute('title', label);
+    pause.setAttribute('aria-pressed', heroSlider.paused ? 'true' : 'false');
+    pause.textContent = heroSlider.paused ? '▶' : '⏸';
+  }
+}
+
+// Muestra el titular `index` deslizándolo fuera de pantalla y entrando el nuevo.
+function heroShow(index, isSync) {
+  const slides = heroSlideEls();
+  if (!slides.length) return;
+  const total = slides.length;
+  const current = heroActiveIndex();
+  const next = ((index % total) + total) % total;
+  if (next === current && !isSync) return;
+
+  // Sentido del deslizamiento (hacia delante o hacia atrás).
+  const rotator = document.getElementById('heroRotator');
+  const forward = next === current + 1 || (current === total - 1 && next === 0);
+  if (rotator) rotator.dataset.dir = forward ? 'next' : 'prev';
+
+  const leaving = slides[current];
+  slides.forEach((el, i) => {
+    el.classList.toggle('is-active', i === next);
+    el.setAttribute('aria-hidden', i === next ? 'false' : 'true');
+  });
+  if (leaving && leaving !== slides[next]) {
+    leaving.classList.add('is-leaving');
+    window.setTimeout(() => leaving.classList.remove('is-leaving'), 650);
+  }
+  heroDotEls().forEach((dot, i) => {
+    dot.classList.toggle('is-active', i === next);
+    if (i === next) dot.setAttribute('aria-current', 'true');
+    else dot.removeAttribute('aria-current');
+  });
+}
+
+function heroAdvance(step) {
+  heroShow(heroActiveIndex() + step);
+}
+function heroStopAuto() {
+  if (heroSlider.timer) {
+    window.clearInterval(heroSlider.timer);
+    heroSlider.timer = null;
+  }
+}
+function heroStartAuto() {
+  heroStopAuto();
+  if (heroSlider.paused || heroSlideEls().length < 2) return;
+  heroSlider.timer = window.setInterval(() => heroAdvance(1), HERO_SLIDE_INTERVAL);
+}
+function heroToggleAuto() {
+  heroSlider.paused = !heroSlider.paused;
+  if (heroSlider.paused) heroStopAuto();
+  else heroStartAuto();
+  heroUpdateLabels();
+}
+
+function initHeroSlider() {
+  const rotator = document.getElementById('heroRotator');
+  if (!rotator) return;
+
+  heroShow(0, true);
+  heroUpdateLabels();
+
+  // Puntos: ir directo a un titular.
+  heroDotEls().forEach((dot, i) => {
+    dot.addEventListener('click', () => {
+      heroShow(i);
+      heroStartAuto();
+    });
+  });
+
+  // Botón de pausa/reanudar la rotación automática.
+  document.getElementById('heroPause')?.addEventListener('click', heroToggleAuto);
+
+  // Deslizar con el dedo (móvil):
+  let startX = null;
+  rotator.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    heroStopAuto();
+  }, { passive: true });
+  rotator.addEventListener('touchend', e => {
+    if (startX === null) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    startX = null;
+    if (Math.abs(dx) < 40) { heroStartAuto(); return; }
+    heroAdvance(dx < 0 ? 1 : -1);
+    heroStartAuto();
+  }, { passive: true });
+
+  // Pausa al pasar el ratón por encima; se reanuda al salir.
+  rotator.addEventListener('mouseenter', heroStopAuto);
+  rotator.addEventListener('mouseleave', heroStartAuto);
+
+  // Respeta la preferencia de movimiento reducido: sin auto-avance.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    heroSlider.paused = true;
+    heroUpdateLabels();
+  } else {
+    heroStartAuto();
+  }
+}
+
 // ---------- Init ----------
 // El sello de versión, copyright y fecha legal vive en js/version.js (fuente única).
 function initSite() {
@@ -416,6 +555,7 @@ function initSite() {
 
   applyLang();
   stampVersionFooter();
+  initHeroSlider();
 
   const grid = document.getElementById('coinCards');
   if (grid) {

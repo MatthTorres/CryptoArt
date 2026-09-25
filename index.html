@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="assets/logo-marketpulse.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=4">
+<link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body data-page="home">
   <div class="bg-glow"></div>
@@ -43,7 +43,19 @@
         <div class="loader"></div>
         <p id="statusText" data-i18n="homeLoading">Cargando datos del mercado…</p>
       </div>
-      <h2 data-i18n="homeHeroTitle">El pulso del mercado hoy: cripto, metales y divisas</h2>
+      <h2 class="hero-rotator" id="heroRotator" aria-live="polite">
+        <span class="hero-slide is-active" data-i18n="homeHeroCrypto">El pulso del mercado cripto hoy</span>
+        <span class="hero-slide" data-i18n="homeHeroMetals">El pulso del mercado de metales hoy</span>
+        <span class="hero-slide" data-i18n="homeHeroForex">El pulso del mercado de divisas hoy</span>
+      </h2>
+      <div class="hero-slider-nav">
+        <div class="hero-dots" id="heroDots">
+          <button class="hero-dot is-active" type="button" aria-current="true" aria-label="Cripto"></button>
+          <button class="hero-dot" type="button" aria-label="Metales"></button>
+          <button class="hero-dot" type="button" aria-label="Divisas"></button>
+        </div>
+        <button class="hero-pause" id="heroPause" type="button" aria-label="Pausar la rotación automática" aria-pressed="false">⏸</button>
+      </div>
       <p class="hero-text" id="marketSummary">—</p>
       <div class="market-stats" id="marketStats"></div>
     </section>
@@ -158,14 +170,14 @@
         <a href="about.html" data-i18n="navAbout">Sobre nosotros</a>
       </nav>
       <p class="footer-meta">
-        <span data-i18n="footerVersion">Versión</span> <span data-app-version>v3.0.1</span>
+        <span data-i18n="footerVersion">Versión</span> <span data-app-version>v3.1.0</span>
         · <span data-i18n="footerRights">Todos los derechos reservados.</span>
         © <span data-app-year>2026</span> MarketPulse
       </p>
     </div>
   </footer>
 
-  <script src="js/version.js?v=2"></script>
-  <script src="js/site.js?v=7"></script>
+  <script src="js/version.js?v=3"></script>
+  <script src="js/site.js?v=8"></script>
 </body>
 </html>

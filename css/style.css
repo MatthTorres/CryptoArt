@@ -490,6 +490,75 @@ h1, h2 { font-family: 'Sora', sans-serif; }
 .hero { margin-bottom: 28px; }
 .hero h2 { font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: 12px; }
 .hero-text { color: var(--text-1); line-height: 1.65; font-size: 1rem; }
+
+/* ---------- Titular rotatorio del home (cripto → metales → divisas) ---------- */
+.hero-rotator {
+  position: relative;
+  overflow: hidden;
+  min-height: 1.3em;
+}
+.hero-slide {
+  --slide-from: 100%;
+  display: block;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  opacity: 0;
+  transform: translateX(var(--slide-from));
+  transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+  pointer-events: none;
+}
+.hero-rotator[data-dir="prev"] .hero-slide { --slide-from: -100%; }
+.hero-slide.is-active {
+  position: relative;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.hero-slide.is-leaving {
+  position: absolute;
+  opacity: 0;
+  transform: translateX(calc(-1 * var(--slide-from)));
+}
+.hero-slider-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: -2px 0 16px;
+}
+.hero-dots { display: flex; align-items: center; gap: 6px; }
+.hero-dot {
+  width: 26px; height: 4px;
+  padding: 0; border: 0; border-radius: 999px;
+  background: var(--surface-border);
+  cursor: pointer;
+  transition: background-color 0.25s ease, width 0.25s ease;
+}
+.hero-dot:hover { background: var(--text-2); }
+.hero-dot.is-active { background: var(--accent); width: 40px; }
+.hero-pause {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  border: 1px solid var(--surface-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 0.68rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+.hero-pause:hover { color: var(--accent); border-color: var(--accent); }
+@media (max-width: 640px) {
+  /* Reserva dos líneas para que los puntos no salten al cambiar de titular */
+  .hero-rotator { min-height: 2.7em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide, .hero-slide.is-active, .hero-slide.is-leaving {
+    transform: none;
+    transition: opacity 0.3s ease;
+  }
+}
 .market-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
