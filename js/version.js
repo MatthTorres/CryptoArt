@@ -5,7 +5,7 @@
 // Al publicar una versión nueva, cambia solo APP_VERSION aquí.
 // ==========================================================
 
-const APP_VERSION = '3.1.0'; // MarketPulse multi-activo (cripto + metales + forex)
+const APP_VERSION = '3.1.1'; // MarketPulse multi-activo (cripto + metales + forex)
 const APP_RELEASE = {
   es: '25 de septiembre de 2026',
   en: 'September 25, 2026',

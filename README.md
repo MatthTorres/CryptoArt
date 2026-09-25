@@ -50,7 +50,9 @@ Es una web **100% estática** (sin backend). Opciones gratuitas:
 - **GitHub Pages**: subir a un repo → Settings → Pages → rama `main`
 - **Vercel / Cloudflare Pages**: CLI o integración con GitHub
 
-## 🗄️ Fuentes de datos
+## 🗄️ Fuentes de datos (documentación interna)
+
+> Los proveedores y los símbolos se detallan aquí **solo para mantenimiento del código**: las páginas públicas no los nombran (el pie de página muestra "Datos de mercado en tiempo real") ni describen los indicadores que se calculan.
 
 - [CoinGecko API](https://www.coingecko.com/en/api) — cripto: precios, capitalización, volumen y sentimiento
 - [Yahoo Finance](https://finance.yahoo.com/) — metales, energía y divisas (vía proxy)
@@ -70,7 +72,7 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 ## 🧾 Políticas de uso y versión
 
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
-- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.1.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`.
+- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.1.1**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
 - **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.
 

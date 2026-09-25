@@ -86,7 +86,7 @@
           <h2><span class="icon">📈</span> <span data-i18n="techTitle">Análisis Técnico</span></h2>
           <span class="badge" id="techBadge">—</span>
         </div>
-        <p class="card-desc" data-i18n="techDesc">RSI(14), medias móviles SMA20/SMA50 y MACD sobre los últimos 90 días.</p>
+        <p class="card-desc" data-i18n="techDesc">Indicadores de tendencia, momentum y volatilidad sobre el historial reciente.</p>
         <div class="metrics-list" id="techMetrics"></div>
         <div class="prob-bar-wrap">
           <div class="prob-labels">
@@ -107,19 +107,19 @@
         <h2><span class="icon">📉</span> <span data-i18n="dailyTitle">Evolución del precio — 90 días</span></h2>
         <span class="badge" id="pairBadge">—</span>
       </div>
-      <p class="card-desc" data-i18n="dailyDesc">Precio de cierre diario con medias móviles SMA 20 (verde) y SMA 50 (rojo) superpuestas.</p>
+      <p class="card-desc" data-i18n="dailyDesc">Precio de cierre diario con las medias de tendencia de corto y largo plazo superpuestas.</p>
       <div class="chart-wrap">
         <canvas id="priceChart"></canvas>
       </div>
     </section>
 
-    <!-- Gráfico en tiempo real (TradingView) -->
+    <!-- Gráfico en vivo del mercado -->
     <section class="card chart-card">
       <div class="card-header">
-        <h2><span class="icon">⚡</span> <span data-i18n="liveTitle">Gráfico en tiempo real — TradingView</span></h2>
+        <h2><span class="icon">⚡</span> <span data-i18n="liveTitle">Gráfico en tiempo real</span></h2>
         <span class="badge" id="tvBadge">—</span>
       </div>
-      <p class="card-desc" data-i18n="liveDesc">Gráfico en tiempo real provisto por TradingView · velas de 1 hora.</p>
+      <p class="card-desc" data-i18n="liveDesc">Gráfico en vivo del mercado · velas de 1 hora.</p>
       <div class="tv-wrap" id="tvChart"></div>
     </section>
 
@@ -146,11 +146,11 @@
       <div class="range-block">
         <h3><span data-i18n="rangeTitle">Rango estimado de fluctuación — hoy</span> <span class="range-date" id="rangeDate"></span></h3>
         <div class="range-metrics" id="rangeMetrics"></div>
-        <p class="range-note" data-i18n="rangeNote">Estimado a partir de la volatilidad y el movimiento medio diario de los últimos 90 días, ajustado por la probabilidad combinada de subida/bajada del análisis. Es una horquilla estadística informativa, no una garantía.</p>
+        <p class="range-note" data-i18n="rangeNote">Estimado a partir de la volatilidad reciente y el movimiento medio diario del activo, ajustado por la probabilidad combinada de subida/bajada. Es una horquilla estadística informativa, no una garantía.</p>
       </div>
 
       <p class="disclaimer" data-i18n="disclaimer">
-        ⚠️ Este análisis se genera automáticamente a partir de datos públicos (Yahoo Finance vía proxy, gold-api.com) e indicadores estadísticos.
+        ⚠️ Este análisis se genera automáticamente a partir de datos públicos de mercado e indicadores estadísticos.
         No constituye asesoría financiera. Las inversiones en materias primas conllevan alto riesgo.
       </p>
     </section>
@@ -158,14 +158,14 @@
 
   <footer class="footer">
     <div class="footer-inner">
-      <p class="footer-meta"><span data-i18n="footerPrefix">MarketPulse · Datos: Yahoo Finance, gold-api.com &amp; TradingView · Actualizado:</span> <span id="updateTime">—</span></p>
+      <p class="footer-meta"><span data-i18n="footerPrefix">MarketPulse · Datos de mercado en tiempo real · Actualizado:</span> <span id="updateTime">—</span></p>
       <nav class="footer-links" aria-label="Enlaces del sitio">
         <a href="legal.html" data-i18n="footerLegal">Políticas de uso y responsabilidad</a>
         <span class="footer-sep">·</span>
         <a href="about.html" data-i18n="navAbout">Sobre nosotros</a>
       </nav>
       <p class="footer-meta">
-        <span data-i18n="footerVersion">Versión</span> <span data-app-version>v3.1.0</span>
+        <span data-i18n="footerVersion">Versión</span> <span data-app-version>v3.1.1</span>
         · <span data-i18n="footerRights">Todos los derechos reservados.</span>
         © <span data-app-year>2026</span> MarketPulse
       </p>
@@ -173,8 +173,8 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="js/version.js?v=3"></script>
-  <script src="js/metals.js?v=7"></script>
+  <script src="js/version.js?v=4"></script>
+  <script src="js/metals.js?v=8"></script>
 </body>
 </html>
 
