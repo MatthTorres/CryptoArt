@@ -371,11 +371,32 @@ function activeSegmentKey() {
 
 // Cotizaciones del segmento (metales o divisas) vía el mismo proxy que usan las
 // páginas de análisis. Se pide solo el último tramo diario para el cambio de 24 h.
+// Se guardan en localStorage: en la siguiente visita del home ya no se pide nada.
+const SEGMENT_TTL = 15 * 60 * 1000;
+function segmentStoreKey(key) { return 'mp_seg_' + key; }
+function readSegmentStore(key) {
+  try {
+    const raw = localStorage.getItem(segmentStoreKey(key));
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    return Date.now() - ts < SEGMENT_TTL ? data : null;
+  } catch { return null; }
+}
+function writeSegmentStore(key, data) {
+  try { localStorage.setItem(segmentStoreKey(key), JSON.stringify({ ts: Date.now(), data })); } catch { /* cuota */ }
+}
+
 async function loadSegmentQuotes(key) {
   if (cached.segments && cached.segments[key]) return cached.segments[key];
+  const stored = readSegmentStore(key);
+  if (stored) {
+    if (!cached.segments) cached.segments = {};
+    cached.segments[key] = stored;
+    return stored;
+  }
   const list = SEGMENT_QUOTES[key] || [];
   const settled = await Promise.allSettled(list.map(q =>
-    fetchRetry(YAHOO_PROXY + encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${q.yahoo}?interval=1d&range=5d`))
+    fetchRetry(YAHOO_PROXY + encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${q.yahoo}?interval=1d&range=5d`), 1)
       .then(d => {
         const closes = (d.chart.result[0].indicators.quote[0].close || []).filter(v => v != null);
         if (closes.length < 2) throw new Error('sin datos');
@@ -390,6 +411,7 @@ async function loadSegmentQuotes(key) {
   const seg = { quotes, avg: quotes.reduce((s, q) => s + q.chg24, 0) / quotes.length };
   if (!cached.segments) cached.segments = {};
   cached.segments[key] = seg;
+  writeSegmentStore(key, seg);
   return seg;
 }
 
@@ -523,12 +545,17 @@ async function loadHomeData() {
   if (ut) ut.textContent = new Date().toLocaleString(locale());
   renderHome();
   // Precarga en segundo plano los datos de metales y divisas para que el titular
-  // rotatorio tenga información al instante. Si un mercado falla, se reintenta al activarlo.
-  ['metals', 'forex'].forEach(key => {
-    loadSegmentQuotes(key)
-      .then(() => { if (activeSegmentKey() === key) renderSegmentInfo(activeSegmentIndex()); })
-      .catch(() => {});
-  });
+  // rotatorio tenga información al instante. Se hacen uno detrás de otro (no 10
+  // en paralelo) para no disparar el rate-limit del proxy gratuito.
+  const prefetch = async () => {
+    for (const key of ['metals', 'forex']) {
+      try {
+        await loadSegmentQuotes(key);
+        if (activeSegmentKey() === key) renderSegmentInfo(activeSegmentIndex());
+      } catch { /* se reintenta al activar ese mercado */ }
+    }
+  };
+  prefetch();
 }
 
 // ---------- Home: titular rotatorio (cripto → metales → divisas) ----------

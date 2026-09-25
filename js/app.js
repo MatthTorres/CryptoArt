@@ -755,7 +755,37 @@ function loadTradingViewScript() {
   return tvScriptPromise;
 }
 
+// El widget de TradingView es lo mas pesado de la pagina y esta bajo el pliegue:
+// se crea solo cuando va a entrar en pantalla (o, como red de seguridad, a los
+// 4 s), de modo que no retrasa el primer pintado ni el analisis.
+let tvReady = false;
+let tvObserved = false;
+function scheduleTradingView() {
+  if (tvReady) return;
+  const container = document.getElementById('tvChart');
+  if (!container) return;
+  const start = () => {
+    if (tvReady) return;
+    tvReady = true;
+    createTradingView();
+  };
+  if (typeof IntersectionObserver === 'undefined') { start(); return; }
+  if (!tvObserved) {
+    tvObserved = true;
+    const io = new IntersectionObserver(entries => {
+      if (entries.some(e => e.isIntersecting)) { io.disconnect(); start(); }
+    }, { rootMargin: '300px' });
+    io.observe(container);
+    setTimeout(start, 4000);   // por si el observer no llegara a dispararse
+  }
+}
+
 function renderTradingView() {
+  if (!tvReady) { scheduleTradingView(); return; }
+  createTradingView();
+}
+
+function createTradingView() {
   const container = document.getElementById('tvChart');
   if (!container) return;
   const theme = state.theme === 'light' ? 'light' : 'dark';

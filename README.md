@@ -69,10 +69,18 @@ Es una web **100% estática** (sin backend). Opciones gratuitas:
 
 Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publica ese activo en TradingView: verifica el prefijo correcto (`OANDA`, `FX_IDC` = datos de ICE, `NYMEX`, `BINANCE`) en `https://www.tradingview.com/symbols/<SÍMBOLO>/`.
 
+## ⚡ Rendimiento y datos (interno)
+
+- **Caché en dos niveles**: el historial de cada activo/par se guarda 15 min en `sessionStorage` y una copia de 24 h en `localStorage` (clave `backup_*`). Al saltar entre pestañas o volver atrás no se vuelve a pedir nada por la red; y si los proxies fallan se muestra el último historial guardado en lugar de una página de error.
+- **Cascada de proxies**: Yahoo bloquea CORS, así que se prueban 2 hosts (`query1`/`query2`) × 2 proxies con CORS (`api.allorigins.win`, `api.cors.lol`), **con un solo intento por combinación y sin pausas artificiales**: se avanza al siguiente en cuanto falla. Proxies retirados por estar caídos: `corsproxy.io` (401) y `codetabs.com` (503).
+- **Gráfico en vivo diferido**: el widget de TradingView es el recurso más pesado y está bajo el pliegue, así que se crea al entrar en pantalla con `IntersectionObserver` (red de seguridad a los 4 s) en vez de bloquear la carga inicial.
+- **Scripts con `defer`** para que Chart.js (201 KB) no bloquee el pintado inicial.
+- **Home**: los datos de metales y divisas del titular se piden de uno en uno (no 10 en paralelo, que disparaba el rate-limit del proxy) y se cachean 15 min en `localStorage`.
+
 ## 🧾 Políticas de uso y versión
 
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
-- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.3.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`.
+- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.4.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
 - **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.
 

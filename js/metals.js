@@ -340,20 +340,23 @@ function macd(values) {
 }
 
 // ---------- Fetch con reintento y multi-proxy ----------
-// Yahoo bloquea CORS y AllOrigins suele caerse -> se prueban varios proxies
-// en cascada + 2 hosts de Yahoo (query1/query2) + fallback Binance.
+// Yahoo bloquea CORS y los proxies gratuitos fallan o se limitan, asi que se
+// prueban en cascada (2 hosts de Yahoo x 2 proxies vivos) SIN pausas artificiales:
+// se avanza al siguiente combo en cuanto falla, para no encadenar segundos de espera.
 const PROXIES = [
   'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?url=',
-  'https://api.codetabs.com/v1/proxy?quest=',
+  'https://api.cors.lol/?url=',
 ];
 const YAHOO_HOSTS = ['https://query1.finance.yahoo.com', 'https://query2.finance.yahoo.com'];
 async function fetchRetry(url, tries = 4, baseDelay = 1500, useGate = false) {
   let lastErr = null;
   for (let i = 0; i < tries; i++) {
+    const isLast = i === tries - 1;
     try {
       const res = useGate ? await gatedFetch(url) : await fetch(url);
       if (res.status === 429) {
+        lastErr = new Error('HTTP 429');
+        if (isLast) break;                       // sin esperas inútiles en el último intento
         await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i) + Math.random() * 1000));
         continue;
       }
@@ -361,20 +364,17 @@ async function fetchRetry(url, tries = 4, baseDelay = 1500, useGate = false) {
       return await res.json();
     } catch (e) {
       lastErr = e;
-      if (i === tries - 1) throw e;
+      if (isLast) break;
       await new Promise(r => setTimeout(r, baseDelay * (i + 1) + Math.random() * 800));
     }
   }
   throw lastErr || new Error('fetch failed');
 }
-// Gate: 1 request con proxy a la vez + pausa 1.5s (los proxies gratuitos
-// también aplican rate-limit si se les dispara en paralelo).
+// Gate: serializa las peticiones por proxy (los gratuitos aplican rate-limit),
+// pero SIN pausa artificial: el retardo solo lo aporta la propia peticion.
 let fetchGate = Promise.resolve();
 function gatedFetch(url, options) {
-  const run = fetchGate.then(async () => {
-    try { return await fetch(url, options); }
-    finally { await new Promise(r => setTimeout(r, 1500)); }
-  });
+  const run = fetchGate.then(() => fetch(url, options));
   fetchGate = run.catch(() => {});
   return run;
 }
@@ -392,7 +392,9 @@ async function loadHistoryBinance(symbol) {
   };
 }
 
-const CACHE_TTL = 5 * 60 * 1000;
+// 15 min en cache de sesion + copia en localStorage: al saltar entre paginas o
+// volver atras, el historial ya esta y no se vuelve a pedir nada por la red.
+const CACHE_TTL = 15 * 60 * 1000;
 const CACHE_BACKUP_TTL = 24 * 60 * 60 * 1000;
 const cached = {};
 function getCached(key) {
@@ -425,7 +427,8 @@ async function fetchYahooChart(yahooSymbol) {
   for (const host of YAHOO_HOSTS) {
     for (const proxy of PROXIES) {
       try {
-        const data = await fetchRetry(proxy + encodeURIComponent(host + path), 2, 1500, true);
+        // 1 solo intento por combo: si falla, se pasa al siguiente sin esperar.
+        const data = await fetchRetry(proxy + encodeURIComponent(host + path), 1, 500, true);
         if (data && data.chart && data.chart.result && data.chart.result[0]) return data;
         lastErr = new Error('yahoo empty');
       } catch (e) { lastErr = e; }
@@ -703,7 +706,37 @@ function loadTradingViewScript() {
   return tvScriptPromise;
 }
 
+// El widget de TradingView es lo mas pesado de la pagina y esta bajo el pliegue:
+// se crea solo cuando va a entrar en pantalla (o, como red de seguridad, a los
+// 4 s), de modo que no retrasa el primer pintado ni el analisis.
+let tvReady = false;
+let tvObserved = false;
+function scheduleTradingView() {
+  if (tvReady) return;
+  const container = document.getElementById('tvChart');
+  if (!container) return;
+  const start = () => {
+    if (tvReady) return;
+    tvReady = true;
+    createTradingView();
+  };
+  if (typeof IntersectionObserver === 'undefined') { start(); return; }
+  if (!tvObserved) {
+    tvObserved = true;
+    const io = new IntersectionObserver(entries => {
+      if (entries.some(e => e.isIntersecting)) { io.disconnect(); start(); }
+    }, { rootMargin: '300px' });
+    io.observe(container);
+    setTimeout(start, 4000);   // por si el observer no llegara a dispararse
+  }
+}
+
 function renderTradingView() {
+  if (!tvReady) { scheduleTradingView(); return; }
+  createTradingView();
+}
+
+function createTradingView() {
   const container = document.getElementById('tvChart');
   if (!container) return;
   const theme = state.theme === 'light' ? 'light' : 'dark';

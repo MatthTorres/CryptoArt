@@ -20,7 +20,13 @@ const pair = PAIRS[pairKey];
 // Inversión de cotización: ?inv=1 muestra el par al revés (EUR/USD -> USD/EUR).
 const invertedFromUrl = new URLSearchParams(location.search).get('inv') === '1';
 
-const PROXY = 'https://api.allorigins.win/raw?url=';
+// Yahoo bloquea CORS: se piden los datos a traves de proxies gratuitos, probando
+// en cascada (2 hosts x 2 proxies vivos) y avanzando en cuanto uno falla.
+const PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://api.cors.lol/?url=',
+];
+const YAHOO_HOSTS = ['https://query1.finance.yahoo.com', 'https://query2.finance.yahoo.com'];
 
 const els = {
   statusText: document.getElementById('statusText'),
@@ -401,19 +407,43 @@ function macd(values) {
 
 // ---------- Fetch con reintento y proxy ----------
 async function fetchRetry(url, tries = 3) {
+  let lastErr = null;
   for (let i = 0; i < tries; i++) {
+    const isLast = i === tries - 1;
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {
-      if (i === tries - 1) throw e;
+      lastErr = e;
+      if (isLast) break;
       await new Promise(r => setTimeout(r, 1500 * (i + 1)));
     }
   }
+  throw lastErr || new Error('fetch failed');
 }
 
-const CACHE_TTL = 60000;
+// ---------- Datos: Yahoo Finance vía cascada de proxies ----------
+async function fetchYahooChart(yahooSymbol) {
+  const path = `/v8/finance/chart/${yahooSymbol}?interval=1d&range=3mo`;
+  let lastErr = null;
+  for (const host of YAHOO_HOSTS) {
+    for (const proxy of PROXIES) {
+      try {
+        // 1 intento por combo: si falla, al siguiente sin esperar.
+        const data = await fetchRetry(proxy + encodeURIComponent(host + path), 1);
+        if (data && data.chart && data.chart.result && data.chart.result[0]) return data;
+        lastErr = new Error('yahoo empty');
+      } catch (e) { lastErr = e; }
+    }
+  }
+  throw lastErr || new Error('yahoo failed');
+}
+
+// 15 min en cache de sesion + copia en localStorage: al cambiar de par o volver
+// atras, el historial ya esta y no se vuelve a pedir nada por la red.
+const CACHE_TTL = 15 * 60 * 1000;
+const CACHE_BACKUP_TTL = 24 * 60 * 60 * 1000;
 const cached = {};
 function getCached(key) {
   try {
@@ -425,6 +455,19 @@ function getCached(key) {
 }
 function setCached(key, data) {
   try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch { /* cuota */ }
+}
+// Copia en localStorage: sobrevive al cierre de la pestaña y sirve de red de
+// seguridad si los proxies fallan cuando se vuelve a entrar.
+function getBackup(key) {
+  try {
+    const raw = localStorage.getItem('backup_' + key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    return Date.now() - ts < CACHE_BACKUP_TTL ? data : null;
+  } catch { return null; }
+}
+function setBackup(key, data) {
+  try { localStorage.setItem('backup_' + key, JSON.stringify({ ts: Date.now(), data })); } catch { /* cuota */ }
 }
 
 function showRetry(container, onClick) {
@@ -438,27 +481,35 @@ function showRetry(container, onClick) {
   container.appendChild(btn);
 }
 
-// ---------- Datos: Yahoo Finance vía proxy AllOrigins ----------
+// ---------- Datos: Yahoo Finance vía cascada de proxies ----------
 async function loadHistoricalPrices() {
   const key = 'fp_hist_' + pair.id;
   const cachedData = getCached(key);
   if (cachedData) return cachedData;
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${pair.yahoo}?interval=1d&range=3mo`;
-  const data = await fetchRetry(PROXY + encodeURIComponent(url));
-  const result = data.chart.result[0];
-  const quote = result.indicators.quote[0];
-  const timestamps = result.timestamp || [];
-  // Emparejar precios con timestamps para no desfasar fechas tras filtrar nulos
-  const zipped = [];
-  for (let i = 0; i < timestamps.length; i++) {
-    const c = quote.close[i];
-    if (c != null) zipped.push({ time: timestamps[i], price: c });
+  try {
+    const data = await fetchYahooChart(pair.yahoo);
+    const result = data.chart.result[0];
+    const quote = result.indicators.quote[0];
+    const timestamps = result.timestamp || [];
+    // Emparejar precios con timestamps para no desfasar fechas tras filtrar nulos
+    const zipped = [];
+    for (let i = 0; i < timestamps.length; i++) {
+      const c = quote.close[i];
+      if (c != null) zipped.push({ time: timestamps[i], price: c });
+    }
+    const prices = zipped.map(z => z.price);
+    const dates = zipped.map(z => new Date(z.time * 1000));
+    const closesMeta = { prices, dates };
+    setCached(key, closesMeta);
+    setBackup(key, closesMeta);
+    return closesMeta;
+  } catch (e) {
+    // Si los proxies fallan, se muestra el ultimo historial guardado (hasta 24 h)
+    // en lugar de una pagina de error.
+    const backup = getBackup(key);
+    if (backup) { setCached(key, backup); return backup; }
+    throw e;
   }
-  const prices = zipped.map(z => z.price);
-  const dates = zipped.map(z => new Date(z.time * 1000));
-  const closesMeta = { prices, dates };
-  setCached(key, closesMeta);
-  return closesMeta;
 }
 
 async function loadSpotPrice() {
@@ -659,7 +710,37 @@ function loadTradingViewScript() {
   return tvScriptPromise;
 }
 
+// El widget de TradingView es lo mas pesado de la pagina y esta bajo el pliegue:
+// se crea solo cuando va a entrar en pantalla (o, como red de seguridad, a los
+// 4 s), de modo que no retrasa el primer pintado ni el analisis.
+let tvReady = false;
+let tvObserved = false;
+function scheduleTradingView() {
+  if (tvReady) return;
+  const container = document.getElementById('tvChart');
+  if (!container) return;
+  const start = () => {
+    if (tvReady) return;
+    tvReady = true;
+    createTradingView();
+  };
+  if (typeof IntersectionObserver === 'undefined') { start(); return; }
+  if (!tvObserved) {
+    tvObserved = true;
+    const io = new IntersectionObserver(entries => {
+      if (entries.some(e => e.isIntersecting)) { io.disconnect(); start(); }
+    }, { rootMargin: '300px' });
+    io.observe(container);
+    setTimeout(start, 4000);   // por si el observer no llegara a dispararse
+  }
+}
+
 function renderTradingView() {
+  if (!tvReady) { scheduleTradingView(); return; }
+  createTradingView();
+}
+
+function createTradingView() {
   const container = document.getElementById('tvChart');
   if (!container) return;
   const theme = state.theme === 'light' ? 'light' : 'dark';
