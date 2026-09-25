@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="assets/logo-marketpulse.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=3">
+<link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body data-page="about">
   <div class="bg-glow"></div>
@@ -76,15 +76,28 @@
 
       <article class="card about-card">
         <h3><span class="icon">⚠️</span> <span data-i18n="aboutRiskTitle">Aviso de riesgo</span></h3>
-        <p data-i18n="aboutRiskText">MarketPulse no presta asesoría financiera. Los estimados se generan automáticamente a partir de modelos estadísticos y datos públicos, y no garantizan resultados. Cripto, metales y divisas son activos volátiles: nunca inviertas más de lo que puedes permitirte perder y usa siempre stop-loss.</p>
+        <p><span data-i18n="aboutRiskText">MarketPulse no presta asesoría financiera. Los estimados se generan automáticamente a partir de modelos estadísticos y datos públicos, y no garantizan resultados. Cripto, metales y divisas son activos volátiles: nunca inviertas más de lo que puedes permitirte perder y usa siempre stop-loss.</span> <a href="legal.html" data-i18n="aboutRiskLink">Consulta las políticas de uso y liberación de responsabilidad.</a></p>
       </article>
     </section>
   </main>
 
   <footer class="footer">
-    <p><span data-i18n="footerPrefix">MarketPulse · Datos: CoinGecko · Yahoo Finance · TradingView · Actualizado:</span> <span id="updateTime">—</span></p>
+    <div class="footer-inner">
+      <p class="footer-meta"><span data-i18n="footerPrefix">MarketPulse · Datos: CoinGecko · Yahoo Finance · TradingView · Actualizado:</span> <span id="updateTime">—</span></p>
+      <nav class="footer-links" aria-label="Enlaces del sitio">
+        <a href="legal.html" data-i18n="footerLegal">Políticas de uso y responsabilidad</a>
+        <span class="footer-sep">·</span>
+        <a href="index.html" data-i18n="navHome">Inicio</a>
+      </nav>
+      <p class="footer-meta">
+        <span data-i18n="footerVersion">Versión</span> <span data-app-version>v3.0.0</span>
+        · <span data-i18n="footerRights">Todos los derechos reservados.</span>
+        © <span data-app-year>2026</span> MarketPulse
+      </p>
+    </div>
   </footer>
 
-  <script src="js/site.js?v=6"></script>
+  <script src="js/version.js?v=1"></script>
+  <script src="js/site.js?v=7"></script>
 </body>
 </html>

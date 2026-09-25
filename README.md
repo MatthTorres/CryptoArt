@@ -24,11 +24,13 @@ Plataforma web de **análisis diario multi-activo (cripto, metales y divisas)** 
 ├── metals.html       # Análisis metales/energía ( ?asset=gold|silver|platinum|palladium|oil )
 ├── forex.html        # Análisis divisas ( ?pair=eurusd|gbpusd|usdjpy|usdcop|usdmxn )
 ├── about.html        # Sobre nosotros
+├── legal.html        # Políticas de uso y liberación de responsabilidad
 ├── css/style.css     # Estilos + temas claro/oscuro
 ├── js/app.js         # Lógica de análisis cripto y gráficos
 ├── js/metals.js      # Lógica de análisis metales/energía
 ├── js/forex.js       # Lógica de análisis divisas
 ├── js/site.js        # Home/About: tema, idioma y datos de mercado
+├── js/version.js     # Versión del programa + sello del pie (versión, copyright, año)
 └── assets/logo-marketpulse.svg   # Logo global
 ```
 
@@ -54,6 +56,15 @@ Es una web **100% estática** (sin backend). Opciones gratuitas:
 - [Yahoo Finance](https://finance.yahoo.com/) — metales, energía y divisas (vía proxy)
 - [Alternative.me Fear & Greed Index](https://alternative.me/crypto/fear-and-greed-index/) — miedo/codicia cripto
 - [TradingView](https://www.tradingview.com/) — gráfico en tiempo real
+
+## 🧾 Políticas de uso y versión
+
+- **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
+- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.0.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`.
+- **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
+- **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.
+
+Para publicar una versión nueva: cambia `APP_VERSION` (y `APP_RELEASE` si aplica) en `js/version.js` y sube el cache-bust `?v=N` de `css/style.css` y de los JS modificados.
 
 ## ⚠️ Aviso de riesgo
 

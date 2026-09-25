@@ -1,6 +1,7 @@
 // ==========================================================
-// MarketPulse — JS compartido: Home (index.html) y Sobre nosotros (about.html)
-// Tema oscuro/claro, idioma ES/EN y datos del mercado para el home.
+// MarketPulse — JS compartido: Home (index.html), Sobre nosotros (about.html)
+// y Políticas de uso (legal.html). Tema oscuro/claro, idioma ES/EN y
+// datos del mercado para el home. La versión vive en js/version.js.
 // ==========================================================
 
 const I18N = {
@@ -14,6 +15,11 @@ const I18N = {
     navForex: 'Divisas',
     navAbout: 'Sobre nosotros',
     footerPrefix: 'MarketPulse · Datos: CoinGecko · Yahoo Finance · TradingView · Actualizado:',
+    footerLegal: 'Políticas de uso y responsabilidad',
+    footerVersion: 'Versión',
+    footerRights: 'Todos los derechos reservados.',
+    footerBrandLine: 'MarketPulse · Análisis multi-activo: cripto, metales y divisas',
+    legalTitle: 'MarketPulse — Políticas de uso y Liberación de responsabilidad',
     homeLoading: 'Cargando datos del mercado…',
     homeOk: 'Datos actualizados correctamente.',
     homeError: '⚠️ No se pudieron cargar los datos del mercado (posible límite de la API). Pulsa Reintentar en unos segundos.',
@@ -69,6 +75,29 @@ const I18N = {
     aboutSourcesText: 'CoinGecko API (cripto: precios, capitalización, volumen y sentimiento), Yahoo Finance (metales, energía y divisas vía proxy), Alternative.me Fear & Greed Index (miedo/codicia cripto) y TradingView (gráfico en tiempo real). Todos los cálculos se ejecutan en tu navegador, sin servidores intermedios.',
     aboutRiskTitle: 'Aviso de riesgo',
     aboutRiskText: 'MarketPulse no presta asesoría financiera. Los estimados se generan automáticamente a partir de modelos estadísticos y datos públicos, y no garantizan resultados. Cripto, metales y divisas son activos volátiles: nunca inviertas más de lo que puedes permitirte perder y usa siempre stop-loss.',
+    aboutRiskLink: 'Consulta las políticas de uso y liberación de responsabilidad.',
+    legalHeroTitle: 'Políticas de uso y Liberación de responsabilidad',
+    legalHeroText: 'Condiciones para usar MarketPulse: qué ofrece la plataforma, qué no ofrece y cuáles son tus responsabilidades como usuario.',
+    legalUpdated: 'Última actualización:',
+    legalVersion: 'Versión del programa:',
+    legalSummaryTitle: 'Resumen rápido',
+    legalSummaryText: 'MarketPulse es una herramienta informativa y educativa. No es asesoría financiera, no gestiona tu dinero y no garantiza resultados. Los datos provienen de terceros y pueden fallar. Cada decisión de inversión es tuya y bajo tu responsabilidad.',
+    legalUseTitle: '1. Uso permitido',
+    legalUseText: 'MarketPulse es una herramienta informativa de análisis multi-activo (criptomonedas, metales, energía y divisas). Puedes consultar libremente los análisis, probabilidades, rangos estimados y gráficos para fines educativos y de investigación personal.',
+    legalMisuseTitle: '2. Uso no permitido',
+    legalMisuse1: 'No usar la plataforma para prestar asesoría financiera a terceros como si fuera una recomendación profesional certificada.',
+    legalMisuse2: 'No redistribuir automáticamente los datos con scraping masivo que degrade el servicio o viole los términos de las fuentes (CoinGecko, Yahoo Finance, TradingView).',
+    legalMisuse3: 'No intentar alterar, descompilar ni suplantar la identidad visual de MarketPulse.',
+    legalRiskTitle: '3. Liberación de responsabilidad',
+    legalRiskText: 'MarketPulse no presta asesoría financiera, no gestiona fondos y no garantiza resultados. Los análisis, probabilidades y rangos se generan automáticamente a partir de modelos estadísticos y datos públicos de terceros, y pueden contener errores, retrasos o interrupciones. Toda decisión de inversión la tomas bajo tu propio riesgo.',
+    legalVolTitle: '4. Riesgo de los activos',
+    legalVolText: 'Las criptomonedas, los metales, la energía y las divisas son activos volátiles y conllevan riesgo de pérdida parcial o total del capital, incluyendo apalancamiento, brechas de precio y eventos geopolíticos. Nunca inviertas más de lo que puedes permitirte perder y usa siempre gestión de riesgo (stop-loss, diversificación).',
+    legalDataTitle: '5. Datos y disponibilidad',
+    legalDataText: 'Los datos provienen de CoinGecko, Yahoo Finance (vía proxy), Alternative.me y TradingView. Pueden aplicar límites de tasa, retrasos o caídas ajenas a MarketPulse. Los cálculos se ejecutan en tu navegador y se guardan localmente (tema, idioma y caché); no operamos servidores que almacenen tu información personal.',
+    legalIpTitle: '6. Propiedad intelectual',
+    legalIpText: 'El nombre MarketPulse, el logo, los textos y el código de análisis pertenecen a sus autores. Puedes compartir enlaces a la plataforma citando la fuente, pero no copiar ni clonar el sitio completo con fines comerciales sin autorización.',
+    legalContactTitle: '7. Contacto y cambios',
+    legalContactText: 'Estas políticas pueden actualizarse con cada versión del programa (ver número de versión en el pie de página). El uso continuado de la plataforma implica la aceptación de la versión vigente.',
   },
   en: {
     homeTitle: 'MarketPulse — Home',
@@ -80,6 +109,11 @@ const I18N = {
     navForex: 'Forex',
     navAbout: 'About us',
     footerPrefix: 'MarketPulse · Data: CoinGecko · Yahoo Finance · TradingView · Updated:',
+    footerLegal: 'Terms of use & disclaimer',
+    footerVersion: 'Version',
+    footerRights: 'All rights reserved.',
+    footerBrandLine: 'MarketPulse · Multi-asset analysis: crypto, metals and forex',
+    legalTitle: 'MarketPulse — Terms of Use & Disclaimer',
     homeLoading: 'Loading market data…',
     homeOk: 'Data updated successfully.',
     homeError: '⚠️ Could not load market data (possible API rate limit). Press Retry in a few seconds.',
@@ -135,6 +169,29 @@ const I18N = {
     aboutSourcesText: 'CoinGecko API (crypto: prices, market cap, volume and sentiment), Yahoo Finance (metals, energy and forex via proxy), Alternative.me Fear & Greed Index (crypto fear/greed) and TradingView (real-time chart). All calculations run in your browser, with no intermediate servers.',
     aboutRiskTitle: 'Risk disclaimer',
     aboutRiskText: 'MarketPulse does not provide financial advice. Estimates are generated automatically from statistical models and public data and do not guarantee results. Crypto, metals and forex are volatile assets: never invest more than you can afford to lose and always use a stop-loss.',
+    aboutRiskLink: 'Read the terms of use and liability disclaimer.',
+    legalHeroTitle: 'Terms of Use & Disclaimer',
+    legalHeroText: 'Terms for using MarketPulse: what the platform offers, what it does not offer, and your responsibilities as a user.',
+    legalUpdated: 'Last updated:',
+    legalVersion: 'App version:',
+    legalSummaryTitle: 'Quick summary',
+    legalSummaryText: 'MarketPulse is an informational and educational tool. It is not financial advice, it does not manage your money and it does not guarantee results. Data comes from third parties and may fail. Every investment decision is yours and your responsibility.',
+    legalUseTitle: '1. Permitted use',
+    legalUseText: 'MarketPulse is an informational multi-asset analysis tool (cryptocurrencies, metals, energy and forex). You may freely consult analyses, probabilities, estimated ranges and charts for educational and personal research purposes.',
+    legalMisuseTitle: '2. Prohibited use',
+    legalMisuse1: 'Do not use the platform to provide financial advice to third parties as if it were certified professional advice.',
+    legalMisuse2: 'Do not redistribute data automatically with massive scraping that degrades the service or violates source terms (CoinGecko, Yahoo Finance, TradingView).',
+    legalMisuse3: 'Do not attempt to alter, decompile or impersonate the MarketPulse brand.',
+    legalRiskTitle: '3. Disclaimer',
+    legalRiskText: 'MarketPulse does not provide financial advice, manage funds or guarantee results. Analyses, probabilities and ranges are generated automatically from statistical models and third-party public data, and may contain errors, delays or outages. Every investment decision is at your own risk.',
+    legalVolTitle: '4. Asset risk',
+    legalVolText: 'Cryptocurrencies, metals, energy and forex are volatile assets with risk of partial or total loss of capital, including leverage, price gaps and geopolitical events. Never invest more than you can afford to lose and always use risk management (stop-loss, diversification).',
+    legalDataTitle: '5. Data & availability',
+    legalDataText: 'Data comes from CoinGecko, Yahoo Finance (via proxy), Alternative.me and TradingView. Rate limits, delays or third-party outages may apply. Calculations run in your browser and are stored locally (theme, language and cache); we operate no servers storing your personal information.',
+    legalIpTitle: '6. Intellectual property',
+    legalIpText: 'The MarketPulse name, logo, texts and analysis code belong to their authors. You may share links to the platform citing the source, but may not copy or clone the full site for commercial purposes without permission.',
+    legalContactTitle: '7. Contact & changes',
+    legalContactText: 'These policies may be updated with each program version (see the version number in the footer). Continued use of the platform implies acceptance of the current version.',
   },
 };
 
@@ -196,6 +253,7 @@ function applyLang() {
     a.classList.toggle('active', active);
   });
   renderHome();
+  if (typeof stampVersionFooter === 'function') stampVersionFooter();
 }
 function setLang(lang) {
   state.lang = lang;
@@ -348,6 +406,7 @@ async function loadHomeData() {
 }
 
 // ---------- Init ----------
+// El sello de versión, copyright y fecha legal vive en js/version.js (fuente única).
 function initSite() {
   applyTheme();
 
@@ -356,6 +415,7 @@ function initSite() {
   document.getElementById('langEn')?.addEventListener('click', () => setLang('en'));
 
   applyLang();
+  stampVersionFooter();
 
   const grid = document.getElementById('coinCards');
   if (grid) {
