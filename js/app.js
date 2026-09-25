@@ -340,21 +340,39 @@ function macd(values) {
 }
 
 // ---------- Fetch de datos (con reintento ante rate-limit/red) ----------
-// CoinGecko permite ~10-30 req/min en plan gratuito. Al pedir 3 endpoints en
-// paralelo con Promise.all, si UNO falla (429) todo falla. Por eso:
-//  - Promise.allSettled para no tumbar todo por un endpoint.
-//  - Backoff con jitter + respeto a Retry-After.
-//  - Los endpoints criticos (market, history) reintentan mas; F&G es opcional.
-async function fetchJSON(url, tries = 5, baseDelay = 2000) {
+// CoinGecko permite ~5-15 req/min en plan gratuito. Navegar pestaña por
+// pestaña (BTC->ETH->SOL->XRP->DOGE) dispara 3 req por moneda; la 4a/5a cae
+// en 429. Por eso:
+//  - fetchGate: solo 1 request CoinGecko a la vez, con pausa mínima (2s).
+//  - Backoff con jitter + respeto a Retry-After (hasta 6 intentos).
+//  - Fallback Binance (sin API key, sin rate-limit agresivo) para historial
+//    y precio spot si CoinGecko falla -> las ultimas monedas TAMBIEN cargan.
+let fetchGate = Promise.resolve();
+function gatedFetch(url, options) {
+  const run = fetchGate.then(async () => {
+    try { return await fetch(url, options); }
+    finally { await new Promise(r => setTimeout(r, 2000)); }
+  });
+  fetchGate = run.catch(() => {});
+  return run;
+}
+const BINANCE_SYMBOL = {
+  bitcoin: 'BTCUSDT', ethereum: 'ETHUSDT', solana: 'SOLUSDT',
+  ripple: 'XRPUSDT', dogecoin: 'DOGEUSDT',
+};
+async function fetchJSON(url, tries = 6, baseDelay = 2500, useGate = true) {
   let lastErr = null;
   for (let i = 0; i < tries; i++) {
     try {
-      const res = await fetch(url);
+      const doFetch = useGate && url.includes('coingecko.com')
+        ? gatedFetch(url)
+        : fetch(url);
+      const res = await doFetch;
       if (res.status === 429) {
         const retryAfter = Number(res.headers.get('Retry-After'));
         const wait = Number.isFinite(retryAfter) && retryAfter > 0
           ? retryAfter * 1000
-          : baseDelay * Math.pow(2, i) + Math.random() * 1000;
+          : baseDelay * Math.pow(2, i) + Math.random() * 1500;
         await new Promise(r => setTimeout(r, wait));
         continue;
       }
@@ -363,11 +381,32 @@ async function fetchJSON(url, tries = 5, baseDelay = 2000) {
     } catch (e) {
       lastErr = e;
       if (i === tries - 1) throw e;
-      // Espera creciente con jitter: 2s, 4s, 8s, 16s (cubre rate-limit 429 de CoinGecko)
-      await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i) + Math.random() * 1000));
+      // Espera creciente con jitter: 2.5s, 5s, 10s, 20s, 40s
+      await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i) + Math.random() * 1500));
     }
   }
   throw lastErr || new Error('fetch failed');
+}
+// Historial diario 90d vía Binance (klines 1d). Devuelve {prices, dates}.
+// No requiere key y tolera muchas más req/min que CoinGecko.
+async function loadHistoryBinance(symbol) {
+  const data = await fetchJSON(
+    `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1d&limit=90`,
+    3, 1500, false
+  );
+  if (!Array.isArray(data) || !data.length) throw new Error('binance empty');
+  const prices = data.map(k => Number(k[4]));
+  const dates = data.map(k => new Date(k[0]));
+  return { prices, dates };
+}
+// Precio spot vía Binance (ticker 24h): price, change%, volume, quoteVolume.
+async function loadSpotBinance(symbol) {
+  const tk = await fetchJSON(
+    `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`,
+    3, 1500, false
+  );
+  if (!tk || !tk.lastPrice) throw new Error('binance spot empty');
+  return tk;
 }
 
 // Caché corta por moneda (5 min) + caché backup (24h) para recargas/cambios
@@ -434,6 +473,7 @@ async function loadHistoricalPrices() {
       dates: cachedData.map((_, i) => new Date(Date.now() - (cachedData.length - i) * 86400000)),
     };
   }
+  // 1) Intento CoinGecko (serie oficial). 2) Fallback Binance si hay 429.
   try {
     const data = await fetchJSON(`https://api.coingecko.com/api/v3/coins/${coin.id}/market_chart?vs_currency=usd&days=90&interval=daily`);
     const prices = data.prices.map(p => p[1]);
@@ -442,6 +482,15 @@ async function loadHistoricalPrices() {
     setBackup(key, prices);
     return { prices, dates };
   } catch (e) {
+    try {
+      const sym = BINANCE_SYMBOL[coin.id];
+      if (sym) {
+        const hb = await loadHistoryBinance(sym);
+        setCached(key, hb.prices);
+        setBackup(key, hb.prices);
+        return hb;
+      }
+    } catch { /* sigue a backup */ }
     const backup = getBackup(key);
     if (backup) {
       setCached(key, backup);
@@ -554,13 +603,34 @@ function renderChart(prices, dates) {
 }
 
 // ---------- Análisis Fundamental ----------
+// Acepta market CoinGecko O market adaptado desde Binance (spot), para que
+// XRP/SOL/DOGE rindan aunque CoinGecko devuelva 429.
+function adaptBinanceMarket(spot, history) {
+  const price = Number(spot.lastPrice);
+  const change24h = Number(spot.priceChangePercent ?? 0);
+  const volume24h = Number(spot.quoteVolume ?? 0);
+  const last = history && history.prices ? history.prices : [];
+  const ref7 = last.length >= 8 ? last[last.length - 8] : (last[0] ?? price);
+  const change7d = ref7 ? ((price - ref7) / ref7) * 100 : 0;
+  return {
+    _binance: true,
+    market_data: {
+      current_price: { usd: price },
+      price_change_percentage_24h: change24h,
+      price_change_percentage_7d: change7d,
+      total_volume: { usd: volume24h },
+      market_cap: { usd: 0 },
+    },
+    sentiment_votes_up_percentage: 50,
+  };
+}
 function analyzeFundamental(market, fng) {
   const md = market.market_data;
   const change24h = md.price_change_percentage_24h ?? 0;
   const change7d = md.price_change_percentage_7d ?? 0;
-  const volume24h = md.total_volume.usd;
-  const marketCap = md.market_cap.usd;
-  const volMcapRatio = (volume24h / marketCap) * 100;
+  const volume24h = md.total_volume.usd || 0;
+  const marketCap = md.market_cap.usd || 0;
+  const volMcapRatio = marketCap > 0 ? (volume24h / marketCap) * 100 : 0;
   const sentimentUp = market.sentiment_votes_up_percentage ?? 50;
   const fngValue = fng ? Number(fng.value) : 50;
   const fngLabel = fng ? fng.value_classification : (state.lang === 'es' ? 'Neutral' : 'Neutral');
@@ -583,8 +653,13 @@ function analyzeFundamental(market, fng) {
   addMetricRow(els.fundMetrics, t('m7d'), fmtPct(change7d), change7d >= 0 ? 'up' : 'down');
   addMetricRow(els.fundMetrics, t('mFng'), `${fngValue} · ${translateFng(fngLabel)}`, fngValue >= 50 ? 'up' : 'down');
   addMetricRow(els.fundMetrics, t('mSentiment'), `${sentimentUp.toFixed(0)}%`, sentimentUp >= 50 ? 'up' : 'down');
-  addMetricRow(els.fundMetrics, t('mVolCap'), `${volMcapRatio.toFixed(2)}%`, 'neutral');
-  addMetricRow(els.fundMetrics, t('mCap'), fmtUSD(marketCap), 'neutral');
+  if (marketCap > 0) {
+    addMetricRow(els.fundMetrics, t('mVolCap'), `${volMcapRatio.toFixed(2)}%`, 'neutral');
+    addMetricRow(els.fundMetrics, t('mCap'), fmtUSD(marketCap), 'neutral');
+  } else {
+    addMetricRow(els.fundMetrics, t('mVolCap'), fmtUSD(volume24h) + ' (24h)', 'neutral');
+    addMetricRow(els.fundMetrics, t('mCap'), state.lang === 'es' ? 'Vía Binance (spot)' : 'Via Binance (spot)', 'neutral');
+  }
 
   els.fundUp.textContent = `${upProb}%`;
   els.fundDown.textContent = `${downProb}%`;
@@ -810,8 +885,8 @@ function renderAnalysis() {
 }
 
 // ---------- Inicialización ----------
-// Secuencial + tolerante: carga primero lo crítico (market+history en paralelo)
-// y Fear&Greed aparte como opcional, para que un 429 no tumbe toda la página.
+// Estrategia anti-429 para navegar BTC->ETH->SOL->XRP->DOGE sin que las
+// últimas fallen: CoinGecko secuencial (gate 2s) + fallback Binance + cache.
 async function init() {
   applyTheme();
   state.statusKey = 'statusLoadingCoin';
@@ -819,13 +894,19 @@ async function init() {
   els.statusRow.querySelector('.loader').classList.remove('done');
   els.statusRow.querySelectorAll('.retry-btn').forEach(b => b.remove());
   try {
-    const results = await Promise.allSettled([loadMarketData(), loadHistoricalPrices()]);
-    const [marketRes, historyRes] = results;
-    if (marketRes.status === 'rejected' || historyRes.status === 'rejected') {
-      throw marketRes.status === 'rejected' ? marketRes.reason : historyRes.reason;
+    // Historial primero (CoinGecko, con fallback Binance adentro).
+    const history = await loadHistoricalPrices();
+    // Market CoinGecko; si da 429, adaptar spot Binance con el historial.
+    let market = null;
+    try {
+      market = await loadMarketData();
+    } catch (e) {
+      const sym = BINANCE_SYMBOL[coin.id];
+      if (sym) {
+        const spot = await loadSpotBinance(sym);
+        market = adaptBinanceMarket(spot, history);
+      } else throw e;
     }
-    const market = marketRes.value;
-    const history = historyRes.value;
     const fng = await loadFearGreed(); // null si falla -> análisis sigue igual
     cached.market = market;
     cached.prices = history.prices;
