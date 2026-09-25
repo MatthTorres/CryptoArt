@@ -16,7 +16,7 @@ const assetParam = new URLSearchParams(location.search).get('asset');
 const assetKey = ASSETS[assetParam] ? assetParam : 'gold';
 const asset = ASSETS[assetKey];
 
-const PROXY = 'https://api.allorigins.win/raw?url=';
+// (Proxy legacy: ver PROXIES/YAHOO_HOSTS en la sección de fetch)
 
 const els = {
   statusText: document.getElementById('statusText'),
@@ -330,21 +330,61 @@ function macd(values) {
   return { macd: macdNow, signal, histogram: macdNow - signal };
 }
 
-// ---------- Fetch con reintento y proxy ----------
-async function fetchRetry(url, tries = 3) {
+// ---------- Fetch con reintento y multi-proxy ----------
+// Yahoo bloquea CORS y AllOrigins suele caerse -> se prueban varios proxies
+// en cascada + 2 hosts de Yahoo (query1/query2) + fallback Binance.
+const PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?url=',
+  'https://api.codetabs.com/v1/proxy?quest=',
+];
+const YAHOO_HOSTS = ['https://query1.finance.yahoo.com', 'https://query2.finance.yahoo.com'];
+async function fetchRetry(url, tries = 4, baseDelay = 1500, useGate = false) {
+  let lastErr = null;
   for (let i = 0; i < tries; i++) {
     try {
-      const res = await fetch(url);
+      const res = useGate ? await gatedFetch(url) : await fetch(url);
+      if (res.status === 429) {
+        await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i) + Math.random() * 1000));
+        continue;
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {
+      lastErr = e;
       if (i === tries - 1) throw e;
-      await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+      await new Promise(r => setTimeout(r, baseDelay * (i + 1) + Math.random() * 800));
     }
   }
+  throw lastErr || new Error('fetch failed');
+}
+// Gate: 1 request con proxy a la vez + pausa 1.5s (los proxies gratuitos
+// también aplican rate-limit si se les dispara en paralelo).
+let fetchGate = Promise.resolve();
+function gatedFetch(url, options) {
+  const run = fetchGate.then(async () => {
+    try { return await fetch(url, options); }
+    finally { await new Promise(r => setTimeout(r, 1500)); }
+  });
+  fetchGate = run.catch(() => {});
+  return run;
+}
+// Símbolos Binance para fallback (Oro/Plata; resto usa Yahoo multi-proxy).
+const BINANCE_FALLBACK = { gold: 'PAXGUSDT', silver: 'XAGUSDT' };
+async function loadHistoryBinance(symbol) {
+  const data = await fetchRetry(
+    `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1d&limit=90`,
+    3, 1500, false
+  );
+  if (!Array.isArray(data) || !data.length) throw new Error('binance empty');
+  return {
+    prices: data.map(k => Number(k[4])),
+    dates: data.map(k => new Date(k[0])),
+  };
 }
 
-const CACHE_TTL = 60000;
+const CACHE_TTL = 5 * 60 * 1000;
+const CACHE_BACKUP_TTL = 24 * 60 * 60 * 1000;
 const cached = {};
 function getCached(key) {
   try {
@@ -356,6 +396,33 @@ function getCached(key) {
 }
 function setCached(key, data) {
   try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch { /* cuota */ }
+}
+function getBackup(key) {
+  try {
+    const raw = localStorage.getItem('backup_' + key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    return Date.now() - ts < CACHE_BACKUP_TTL ? data : null;
+  } catch { return null; }
+}
+function setBackup(key, data) {
+  try { localStorage.setItem('backup_' + key, JSON.stringify({ ts: Date.now(), data })); } catch { /* cuota */ }
+}
+// Yahoo vía cascada de proxies: prueba query1/query2 x allorigins/corsproxy/
+// codetabs hasta que uno responda. Devuelve el JSON crudo del chart.
+async function fetchYahooChart(yahooSymbol) {
+  const path = `/v8/finance/chart/${yahooSymbol}?interval=1d&range=3mo`;
+  let lastErr = null;
+  for (const host of YAHOO_HOSTS) {
+    for (const proxy of PROXIES) {
+      try {
+        const data = await fetchRetry(proxy + encodeURIComponent(host + path), 2, 1500, true);
+        if (data && data.chart && data.chart.result && data.chart.result[0]) return data;
+        lastErr = new Error('yahoo empty');
+      } catch (e) { lastErr = e; }
+    }
+  }
+  throw lastErr || new Error('yahoo failed');
 }
 
 function showRetry(container, onClick) {
@@ -369,21 +436,45 @@ function showRetry(container, onClick) {
   container.appendChild(btn);
 }
 
-// ---------- Datos: Yahoo Finance vía proxy AllOrigins ----------
+// ---------- Datos: Yahoo Finance vía multi-proxy + fallback Binance ----------
 async function loadHistoricalPrices() {
   const key = 'mp_hist_' + asset.id;
   const cachedData = getCached(key);
   if (cachedData) return cachedData;
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${asset.yahoo}?interval=1d&range=3mo`;
-  const data = await fetchRetry(PROXY + encodeURIComponent(url));
-  const result = data.chart.result[0];
-  const prices = result.indicators.quote[0].close.filter(v => v != null);
-  const timestamps = result.timestamp || [];
-  const dates = [];
-  for (let i = 0; i < prices.length; i++) {
-    dates.push(timestamps[i] ? new Date(timestamps[i] * 1000) : new Date(Date.now() - (prices.length - i) * 86400000));
+  // 1) Yahoo en cascada. 2) Binance (oro/plata). 3) Backup 24h.
+  try {
+    const data = await fetchYahooChart(asset.yahoo);
+    const parsed = parseYahooChart(data);
+    setCached(key, parsed);
+    setBackup(key, parsed);
+    return parsed;
+  } catch (e) {
+    try {
+      const sym = BINANCE_FALLBACK[asset.id];
+      if (sym) {
+        const hb = await loadHistoryBinance(sym);
+        setCached(key, hb);
+        setBackup(key, hb);
+        return hb;
+      }
+    } catch { /* sigue a backup */ }
+    const backup = getBackup(key);
+    if (backup) { setCached(key, backup); return backup; }
+    throw e;
   }
-  setCached(key, { prices, dates });
+}
+function parseYahooChart(data) {
+  const result = data.chart.result[0];
+  const quote = result.indicators.quote[0];
+  const timestamps = result.timestamp || [];
+  // Emparejar precios con timestamps para no desfasar fechas tras filtrar nulos
+  const zipped = [];
+  for (let i = 0; i < timestamps.length; i++) {
+    const c = quote.close[i];
+    if (c != null) zipped.push({ time: timestamps[i], price: c });
+  }
+  const prices = zipped.map(z => z.price);
+  const dates = zipped.map(z => new Date(z.time * 1000));
   return { prices, dates };
 }
 
@@ -391,17 +482,22 @@ async function loadSpotPrice() {
   const key = 'mp_spot_' + asset.id;
   const cachedData = getCached(key);
   if (cachedData) return cachedData;
-  // gold-api.com solo cubre metales; petróleo usa Yahoo (último cierre)
+  // gold-api.com solo cubre metales; petróleo usa Yahoo (último cierre).
+  // Si el spot falla, NO tumba la página: init() sigue con el último cierre.
   if (asset.id !== 'oil') {
     const url = `https://api.gold-api.com/price/${asset.symbol}`;
-    const data = await fetchRetry(url);
-    const price = parseFloat(data.price);
-    setCached(key, price);
-    return price;
+    try {
+      const data = await fetchRetry(url, 2, 1500, false);
+      const price = parseFloat(data.price);
+      if (Number.isFinite(price)) {
+        setCached(key, price);
+        setBackup(key, price);
+        return price;
+      }
+    } catch { /* degradado: null */ }
+    const backup = getBackup(key);
+    if (backup) return backup;
   }
-  return null;
-}
-
   return null;
 }
 
@@ -724,6 +820,8 @@ function renderAnalysis() {
 }
 
 // ---------- Inicialización ----------
+// Spot opcional: si gold-api falla, la página sigue con el último cierre
+// de Yahoo/Binance en vez de quedarse en "Cargando..." para siempre.
 async function init() {
   applyTheme();
   state.statusKey = 'statusLoadingCoin';
@@ -731,10 +829,9 @@ async function init() {
   els.statusRow.querySelector('.loader').classList.remove('done');
   els.statusRow.querySelectorAll('.retry-btn').forEach(b => b.remove());
   try {
-    const [history, spot] = await Promise.all([
-      loadHistoricalPrices(),
-      loadSpotPrice(),
-    ]);
+    const history = await loadHistoricalPrices();
+    let spot = null;
+    try { spot = await loadSpotPrice(); } catch { spot = null; }
     cached.prices = history.prices;
     cached.dates = history.dates;
     cached.spotPrice = spot;
