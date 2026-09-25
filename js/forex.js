@@ -72,6 +72,7 @@ const I18N = {
     statusLoadingCoin: 'Cargando datos de {coin}…',
     statusOk: 'Análisis actualizado correctamente.',
     statusError: '⚠️ No se pudieron cargar los datos (posible límite de la API o falta de conexión). Pulsa Reintentar en unos segundos.',
+    chartUnavailable: 'No se pudo cargar el gráfico de evolución. El resto del análisis sí es válido.',
     retry: 'Reintentar',
     navHome: 'Inicio',
     navAnalysis: 'Cripto',
@@ -146,6 +147,7 @@ const I18N = {
     statusLoadingCoin: 'Loading {coin} data…',
     statusOk: 'Analysis updated successfully.',
     statusError: '⚠️ Could not load data (possible API rate limit or no connection). Press Retry in a few seconds.',
+    chartUnavailable: 'The price chart could not be loaded. The rest of the analysis is still valid.',
     retry: 'Retry',
     navHome: 'Home',
     navAnalysis: 'Crypto',
@@ -614,9 +616,40 @@ function smaSeries(values, period) {
 }
 
 let priceChartInstance = null;
+let chartJsPromise = null;
+
+// Chart.js llega desde el HTML en paralelo, pero si el CDN va lento, está bloqueado
+// o falla, se vuelve a pedir bajo demanda. Si de verdad no se puede cargar, el
+// gráfico muestra un aviso propio sin tumbar el análisis que ya está en pantalla.
+function ensureChartJs() {
+  if (typeof Chart !== 'undefined') return Promise.resolve();
+  if (!chartJsPromise) {
+    chartJsPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => { chartJsPromise = null; reject(new Error('chart.js no disponible')); };
+      document.head.appendChild(s);
+    });
+  }
+  return chartJsPromise;
+}
 
 function renderChart(prices, dates) {
-  const ctx = document.getElementById('priceChart').getContext('2d');
+  const canvas = document.getElementById('priceChart');
+  if (!canvas || !prices || !dates) return;
+  ensureChartJs()
+    .then(() => drawChart(canvas, prices, dates))
+    .catch(err => {
+      console.error('No se pudo cargar el gráfico de evolución:', err);
+      const wrap = canvas.parentElement;
+      if (wrap) wrap.innerHTML = `<p class="card-desc">${t('chartUnavailable')}</p>`;
+    });
+}
+
+function drawChart(canvas, prices, dates) {
+  const ctx = canvas.getContext('2d');
   const labels = dates.map(d => d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }));
   const sma20Series = smaSeries(prices, 20);
   const sma50Series = smaSeries(prices, 50);
@@ -944,13 +977,16 @@ async function init() {
     updateViewDecimals();
 
     renderAnalysis();
-    renderChart(cached.prices, cached.dates);
-    renderTradingView();
 
+    // A partir de aquí los gráficos son opcionales: si alguno falla, el análisis ya
+    // mostrado sigue siendo válido y NO se muestra un error de "datos no cargados".
     state.statusKey = 'statusOk';
     els.statusRow.querySelector('.loader').classList.add('done');
     els.statusText.textContent = t(state.statusKey);
     els.updateTime.textContent = new Date().toLocaleString(locale());
+
+    renderChart(cached.prices, cached.dates);
+    renderTradingView();
   } catch (err) {
     console.error(err);
     state.statusKey = 'statusError';
