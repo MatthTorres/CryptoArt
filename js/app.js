@@ -348,18 +348,19 @@ function macd(values) {
 }
 
 // ---------- Fetch de datos (con reintento ante rate-limit/red) ----------
-// CoinGecko permite ~5-15 req/min en plan gratuito. Navegar pestaña por
-// pestaña (BTC->ETH->SOL->XRP->DOGE) dispara 3 req por moneda; la 4a/5a cae
-// en 429. Por eso:
-//  - fetchGate: solo 1 request CoinGecko a la vez, con pausa mínima (2s).
-//  - Backoff con jitter + respeto a Retry-After (hasta 6 intentos).
-//  - Fallback Binance (sin API key, sin rate-limit agresivo) para historial
-//    y precio spot si CoinGecko falla -> las ultimas monedas TAMBIEN cargan.
+// CoinGecko permite ~5-15 req/min en plan gratuito. Antes se serializaba cada
+// petición con 2 s de pausa artificial, lo que añadiría ~4 s solo en esperas;
+// ahora se serializa con una pausa corta y, sobre todo, se cachea 15 min para
+// que saltar de pestaña no vuelva a pedir nada.
+//  - fetchGate: solo 1 request CoinGecko a la vez, con pausa mínima (400 ms).
+//  - Reintentos cortos: si CoinGecko falla se cae rápido a Binance en vez de
+//    esperar decenas de segundos (el respaldo no tiene rate-limit agresivo).
+//  - Fallback Binance (sin API key) para historial y precio spot.
 let fetchGate = Promise.resolve();
 function gatedFetch(url, options) {
   const run = fetchGate.then(async () => {
     try { return await fetch(url, options); }
-    finally { await new Promise(r => setTimeout(r, 2000)); }
+    finally { await new Promise(r => setTimeout(r, 400)); }
   });
   fetchGate = run.catch(() => {});
   return run;
@@ -368,7 +369,7 @@ const BINANCE_SYMBOL = {
   bitcoin: 'BTCUSDT', ethereum: 'ETHUSDT', solana: 'SOLUSDT',
   ripple: 'XRPUSDT', dogecoin: 'DOGEUSDT',
 };
-async function fetchJSON(url, tries = 6, baseDelay = 2500, useGate = true) {
+async function fetchJSON(url, tries = 3, baseDelay = 1200, useGate = true) {
   let lastErr = null;
   for (let i = 0; i < tries; i++) {
     try {
@@ -377,10 +378,13 @@ async function fetchJSON(url, tries = 6, baseDelay = 2500, useGate = true) {
         : fetch(url);
       const res = await doFetch;
       if (res.status === 429) {
+        lastErr = new Error('HTTP 429');
+        if (i === tries - 1) break;          // no insistir: hay respaldo (Binance)
+        // Retry-After, pero acotado: esperar 60 s tiene menos sentido que caer a Binance
         const retryAfter = Number(res.headers.get('Retry-After'));
         const wait = Number.isFinite(retryAfter) && retryAfter > 0
-          ? retryAfter * 1000
-          : baseDelay * Math.pow(2, i) + Math.random() * 1500;
+          ? Math.min(retryAfter * 1000, 2500)
+          : baseDelay * Math.pow(2, i) + Math.random() * 800;
         await new Promise(r => setTimeout(r, wait));
         continue;
       }
@@ -388,9 +392,8 @@ async function fetchJSON(url, tries = 6, baseDelay = 2500, useGate = true) {
       return await res.json();
     } catch (e) {
       lastErr = e;
-      if (i === tries - 1) throw e;
-      // Espera creciente con jitter: 2.5s, 5s, 10s, 20s, 40s
-      await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i) + Math.random() * 1500));
+      if (i === tries - 1) break;
+      await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i) + Math.random() * 800));
     }
   }
   throw lastErr || new Error('fetch failed');
@@ -419,7 +422,7 @@ async function loadSpotBinance(symbol) {
 
 // Caché corta por moneda (5 min) + caché backup (24h) para recargas/cambios
 // de pestaña instantáneos y para operar degradado si la API da 429.
-const CACHE_TTL = 5 * 60 * 1000;
+const CACHE_TTL = 15 * 60 * 1000;
 const CACHE_BACKUP_TTL = 24 * 60 * 60 * 1000;
 function getCached(key) {
   try {
@@ -963,20 +966,22 @@ async function init() {
   els.statusRow.querySelector('.loader').classList.remove('done');
   els.statusRow.querySelectorAll('.retry-btn').forEach(b => b.remove());
   try {
-    // Historial primero (CoinGecko, con fallback Binance adentro).
-    const history = await loadHistoricalPrices();
-    // Market CoinGecko; si da 429, adaptar spot Binance con el historial.
-    let market = null;
-    try {
-      market = await loadMarketData();
-    } catch (e) {
+    // Historial, datos de mercado y sentimiento son fuentes independientes: se piden
+    // A LA VEZ y cada una cae por separado a su respaldo. Antes iban en serie, así que
+    // la página tardaba la suma de las tres (y sus esperas) en vez de la más lenta.
+    const [history, marketRes, fng] = await Promise.all([
+      loadHistoricalPrices(),
+      loadMarketData().then(v => ({ ok: v })).catch(e => ({ err: e })),
+      loadFearGreed(),
+    ]);
+    // Si CoinGecko no da los datos de mercado, se adaptan desde Binance (spot).
+    let market = marketRes.ok;
+    if (!market) {
       const sym = BINANCE_SYMBOL[coin.id];
-      if (sym) {
-        const spot = await loadSpotBinance(sym);
-        market = adaptBinanceMarket(spot, history);
-      } else throw e;
+      if (!sym) throw marketRes.err;
+      const spot = await loadSpotBinance(sym);
+      market = adaptBinanceMarket(spot, history);
     }
-    const fng = await loadFearGreed(); // null si falla -> análisis sigue igual
     cached.market = market;
     cached.prices = history.prices;
     cached.dates = history.dates;
