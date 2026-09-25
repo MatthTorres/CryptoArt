@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title data-i18n="docTitle">MetalPulse — Análisis de Metales y Energía</title>
-<link rel="icon" type="image/svg+xml" href="assets/logo-metals.svg">
+<title data-i18n="docTitle">FiatPulse — Análisis de Divisas</title>
+<link rel="icon" type="image/svg+xml" href="assets/logo-forex.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css?v=3">
@@ -14,10 +14,10 @@
 
   <header class="topbar">
     <div class="brand">
-      <img src="assets/logo-metals.svg" alt="MetalPulse" class="brand-icon" width="48" height="48">
+      <img src="assets/logo-forex.svg" alt="FiatPulse" class="brand-icon" width="48" height="48">
       <div>
-        <h1>Metal<span class="brand-accent">Pulse</span></h1>
-        <p class="tagline" data-i18n="tagline">Análisis diario de metales y energía</p>
+        <h1>Fiat<span class="brand-accent">Pulse</span></h1>
+        <p class="tagline" data-i18n="tagline">Análisis diario de divisas</p>
       </div>
     </div>
     <div class="header-controls">
@@ -38,16 +38,16 @@
     <a href="index.html" class="nav-link" data-i18n="navHome">Inicio</a>
     <a href="analysis.html?coin=bitcoin" class="nav-link" data-i18n="navAnalysis">Cripto</a>
     <a href="metals.html?asset=gold" class="nav-link" data-i18n="navMetals">Metales</a>
-    <a href="forex.html?pair=eurusd" class="nav-link" data-i18n="navForex">Divisas</a>
+    <a href="forex.html?pair=eurusd" class="nav-link nav-here" aria-current="page">Divisas</a>
     <a href="about.html" class="nav-link" data-i18n="navAbout">Sobre nosotros</a>
   </nav>
 
   <div class="coin-tabs" id="assetTabs" role="tablist" aria-label="Activos">
-    <a class="coin-tab" href="metals.html?asset=gold" data-asset="gold">🥇 XAU · Oro</a>
-    <a class="coin-tab" href="metals.html?asset=silver" data-asset="silver">🥈 XAG · Plata</a>
-    <a class="coin-tab" href="metals.html?asset=platinum" data-asset="platinum">⚪ XPT · Platino</a>
-    <a class="coin-tab" href="metals.html?asset=palladium" data-asset="palladium">🔘 XPD · Paladio</a>
-    <a class="coin-tab" href="metals.html?asset=oil" data-asset="oil">🛢️ WTI · Petróleo</a>
+<a class="coin-tab" href="forex.html?pair=eurusd" data-pair="eurusd">€ · EUR/USD</a>
+<a class="coin-tab" href="forex.html?pair=usdcop" data-pair="usdcop">$ · USD/COP</a>
+<a class="coin-tab" href="forex.html?pair=gbpusd" data-pair="gbpusd">£ · GBP/USD</a>
+<a class="coin-tab" href="forex.html?pair=usdjpy" data-pair="usdjpy">¥ · USD/JPY</a>
+<a class="coin-tab" href="forex.html?pair=usdmxn" data-pair="usdmxn">$ · USD/MXN</a>
   </div>
 
   <main class="container">
@@ -57,7 +57,7 @@
     </section>
 
     <!-- Activo seleccionado -->
-    <div class="coin-banner" id="assetBanner">—</div>
+    <div class="coin-banner" id="pairBanner">—</div>
 
     <section class="cards-grid">
       <!-- Análisis Fundamental -->
@@ -151,17 +151,17 @@
 
       <p class="disclaimer" data-i18n="disclaimer">
         ⚠️ Este análisis se genera automáticamente a partir de datos públicos (Yahoo Finance vía proxy, gold-api.com) e indicadores estadísticos.
-        No constituye asesoría financiera. Las inversiones en materias primas conllevan alto riesgo.
+        No constituye asesoría financiera. Las inversiones en divisas conllevan alto riesgo.
       </p>
     </section>
   </main>
 
   <footer class="footer">
-    <p><span data-i18n="footerPrefix">MetalPulse · Datos: Yahoo Finance, gold-api.com &amp; TradingView · Actualizado:</span> <span id="updateTime">—</span></p>
+    <p><span data-i18n="footerPrefix">FiatPulse · Datos: Yahoo Finance &amp; TradingView · Actualizado:</span> <span id="updateTime">—</span></p>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="js/metals.js?v=3"></script>
+  <script src="js/forex.js?v=3"></script>
 </body>
 </html>
 

@@ -1,20 +1,20 @@
 // ==========================================================
-// MetalPulse — Análisis de Metales y Energía (Oro, Plata, Platino, Paladio, Petróleo)
-// Fuentes: Yahoo Finance (vía proxy AllOrigins) para historial + gold-api.com para spot
+// FiatPulse — Análisis de Divisas (Euro, Dolar, Peso COP, Libra, Yen)
+// Fuentes: Yahoo Finance (vía proxy AllOrigins) para historial y cotizaciones
 // ==========================================================
 
-// ---------- Configuración de activos (5 pestañas) ----------
-const ASSETS = {
-  gold:      { id: 'gold',      name: 'Oro',          nameEn: 'Gold',      symbol: 'XAU', yahoo: 'GC=F',  tv: 'FOREXCOM:XAUUSD' },
-  silver:    { id: 'silver',    name: 'Plata',        nameEn: 'Silver',    symbol: 'XAG', yahoo: 'SI=F',  tv: 'FOREXCOM:XAGUSD' },
-  platinum:  { id: 'platinum',  name: 'Platino',      nameEn: 'Platinum',  symbol: 'XPT', yahoo: 'PL=F',  tv: 'FOREXCOM:XPTUSD' },
-  palladium: { id: 'palladium', name: 'Paladio',      nameEn: 'Palladium', symbol: 'XPD', yahoo: 'PA=F',  tv: 'FOREXCOM:XPDUSD' },
-  oil:       { id: 'oil',       name: 'Petróleo WTI', nameEn: 'WTI Oil',   symbol: 'CL',  yahoo: 'CL=F',  tv: 'NYMEX:CL1!' },
+// ---------- Configuración de pares (5 pestañas) ----------
+const PAIRS = {
+  eurusd:  { id: 'eurusd',  name: 'Euro / Dólar',   nameEn: 'Euro / US Dollar',    symbol: 'EURUSD', yahoo: 'EURUSD=X', tv: 'OANDA:EURUSD' },
+  usdcop:  { id: 'usdcop',  name: 'Dólar / Peso COP', nameEn: 'US Dollar / Colombian Peso', symbol: 'USDCOP', yahoo: 'COP=X',    tv: 'OANDA:USDCOP' },
+  gbpusd:  { id: 'gbpusd',  name: 'Libra / Dólar',  nameEn: 'British Pound / US Dollar',     symbol: 'GBPUSD', yahoo: 'GBPUSD=X', tv: 'OANDA:GBPUSD' },
+  usdjpy:  { id: 'usdjpy',  name: 'Dólar / Yen',    nameEn: 'US Dollar / Japanese Yen',       symbol: 'USDJPY', yahoo: 'JPY=X',    tv: 'OANDA:USDJPY' },
+  usdmxn:  { id: 'usdmxn',  name: 'Dólar / Peso MXN', nameEn: 'US Dollar / Mexican Peso',     symbol: 'USDMXN', yahoo: 'MXN=X',    tv: 'OANDA:USDMXN' },
 };
 
-const assetParam = new URLSearchParams(location.search).get('asset');
-const assetKey = ASSETS[assetParam] ? assetParam : 'gold';
-const asset = ASSETS[assetKey];
+const pairParam = new URLSearchParams(location.search).get('pair');
+const pairKey = PAIRS[pairParam] ? pairParam : 'eurusd';
+const pair = PAIRS[pairKey];
 
 const PROXY = 'https://api.allorigins.win/raw?url=';
 
@@ -46,14 +46,14 @@ const els = {
   rangeDate: document.getElementById('rangeDate'),
   recoDetails: document.getElementById('recoDetails'),
   updateTime: document.getElementById('updateTime'),
-  assetBanner: document.getElementById('assetBanner'),
+  pairBanner: document.getElementById('pairBanner'),
 };
 
 // ---------- Internacionalización (ES / EN) ----------
 const I18N = {
   es: {
-    docTitle: 'MetalPulse — Análisis de {coin}',
-    tagline: 'Análisis diario de metales y energía',
+    docTitle: 'FiatPulse — Análisis de {coin}',
+    tagline: 'Análisis diario de divisas',
     priceLabel: 'Precio actual',
     statusLoading: 'Cargando datos del mercado en tiempo real…',
     statusLoadingCoin: 'Cargando datos de {coin}…',
@@ -66,7 +66,7 @@ const I18N = {
     navForex: 'Divisas',
     navAbout: 'Sobre nosotros',
     fundTitle: 'Análisis Fundamental',
-    fundDesc: 'Variaciones diarias, semanales y mensuales del activo en el mercado spot.',
+    fundDesc: 'Variaciones diarias, semanales y mensuales de la divisa en el mercado de divisas.',
     techTitle: 'Análisis Técnico',
     techDesc: 'RSI(14), medias móviles SMA20/SMA50 y MACD sobre los últimos 90 días.',
     up: 'Subida',
@@ -78,8 +78,8 @@ const I18N = {
     summaryTitle: 'Resumen y Recomendación Profesional',
     combinedLabel: 'Prob. Subida Combinada',
     summaryPlaceholder: 'Analizando ambos enfoques para generar una recomendación…',
-    disclaimer: '⚠️ Este análisis se genera automáticamente a partir de datos públicos (Yahoo Finance vía proxy, gold-api.com) e indicadores estadísticos. No constituye asesoría financiera. Las inversiones en materias primas conllevan alto riesgo.',
-    footerPrefix: 'MetalPulse · Datos: Yahoo Finance, gold-api.com & TradingView · Actualizado:',
+    disclaimer: '⚠️ Este análisis se genera automáticamente a partir de datos públicos (Yahoo Finance vía proxy, gold-api.com) e indicadores estadísticos. No constituye asesoría financiera. Las inversiones en divisas conllevan alto riesgo.',
+    footerPrefix: 'FiatPulse · Datos: Yahoo Finance & TradingView · Actualizado:',
     m24h: 'Variación 24h',
     m7d: 'Variación 7 días',
     m30d: 'Variación 30 días',
@@ -121,8 +121,8 @@ const I18N = {
     rangeClosePrice: 'Precio esperado al cierre de hoy',
   },
   en: {
-    docTitle: 'MetalPulse — {coin} Analysis',
-    tagline: 'Daily metals and energy analysis',
+    docTitle: 'FiatPulse — {coin} Analysis',
+    tagline: 'Daily forex analysis',
     priceLabel: 'Current price',
     statusLoading: 'Loading live market data…',
     statusLoadingCoin: 'Loading {coin} data…',
@@ -135,7 +135,7 @@ const I18N = {
     navForex: 'Forex',
     navAbout: 'About us',
     fundTitle: 'Fundamental Analysis',
-    fundDesc: 'Daily, weekly and monthly changes of the asset in the spot market.',
+    fundDesc: 'Daily, weekly and monthly changes of the currency in the forex market.',
     techTitle: 'Technical Analysis',
     techDesc: 'RSI(14), SMA20/SMA50 moving averages and MACD over the last 90 days.',
     up: 'Up',
@@ -147,8 +147,8 @@ const I18N = {
     summaryTitle: 'Summary & Professional Recommendation',
     combinedLabel: 'Combined Up Probability',
     summaryPlaceholder: 'Analyzing both approaches to generate a recommendation…',
-    disclaimer: '⚠️ This analysis is generated automatically from public data (Yahoo Finance via proxy, gold-api.com) and statistical indicators. It does not constitute financial advice. Commodity investments carry high risk.',
-    footerPrefix: 'MetalPulse · Data: Yahoo Finance, gold-api.com & TradingView · Updated:',
+    disclaimer: '⚠️ This analysis is generated automatically from public data (Yahoo Finance via proxy, gold-api.com) and statistical indicators. It does not constitute financial advice. Currency investments carry high risk.',
+    footerPrefix: 'FiatPulse · Data: Yahoo Finance & TradingView · Updated:',
     m24h: '24h change',
     m7d: '7-day change',
     m30d: '30-day change',
@@ -198,15 +198,15 @@ const state = {
   statusKey: 'statusLoading',
 };
 
-function assetName() {
-  return state.lang === 'en' ? asset.nameEn : asset.name;
+function pairName() {
+  return state.lang === 'en' ? pair.nameEn : pair.name;
 }
 
 function fillText(s) {
   return String(s)
-    .replace(/\{coin\}/g, assetName())
-    .replace(/\{pair\}/g, asset.tv)
-    .replace(/\{symbol\}/g, asset.symbol);
+    .replace(/\{coin\}/g, pairName())
+    .replace(/\{pair\}/g, pair.tv)
+    .replace(/\{symbol\}/g, pair.symbol);
 }
 
 function t(key) {
@@ -217,6 +217,17 @@ function locale() { return state.lang === 'es' ? 'es-ES' : 'en-US'; }
 
 function fmtUSD(n) {
   return new Intl.NumberFormat(locale(), { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
+}
+// Formato dinámico por par de divisas: respeta decimales de la moneda cotizada.
+// EUR/USD y GBP/USD -> 4 decimales; USD/JPY y USD/MXN -> 2; USD/COP -> 2.
+function pairDecimals(key = pairKey) {
+  if (key === 'eurusd' || key === 'gbpusd') return 4;
+  return 2;
+}
+function fmtPairPrice(n, key = pairKey) {
+  if (n == null || Number.isNaN(Number(n))) return '—';
+  const d = pairDecimals(key);
+  return new Intl.NumberFormat(locale(), { minimumFractionDigits: d, maximumFractionDigits: d }).format(Number(n));
 }
 function fmtPct(n, digits = 1) {
   return `${n >= 0 ? '+' : ''}${n.toFixed(digits)}%`;
@@ -265,7 +276,7 @@ function applyLang() {
   els.langEs.classList.toggle('active', state.lang === 'es');
   els.langEn.classList.toggle('active', state.lang === 'en');
   els.statusText.textContent = fillText(t(state.statusKey));
-  els.assetBanner.textContent = `${assetName()} · ${asset.symbol}`;
+  els.pairBanner.textContent = `${pairName()} · ${pair.symbol}`;
   renderAnalysis();
   renderTradingView();
   if (cached.prices) renderChart(cached.prices, cached.dates);
@@ -371,37 +382,29 @@ function showRetry(container, onClick) {
 
 // ---------- Datos: Yahoo Finance vía proxy AllOrigins ----------
 async function loadHistoricalPrices() {
-  const key = 'mp_hist_' + asset.id;
+  const key = 'fp_hist_' + pair.id;
   const cachedData = getCached(key);
   if (cachedData) return cachedData;
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${asset.yahoo}?interval=1d&range=3mo`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${pair.yahoo}?interval=1d&range=3mo`;
   const data = await fetchRetry(PROXY + encodeURIComponent(url));
   const result = data.chart.result[0];
-  const prices = result.indicators.quote[0].close.filter(v => v != null);
+  const quote = result.indicators.quote[0];
   const timestamps = result.timestamp || [];
-  const dates = [];
-  for (let i = 0; i < prices.length; i++) {
-    dates.push(timestamps[i] ? new Date(timestamps[i] * 1000) : new Date(Date.now() - (prices.length - i) * 86400000));
+  // Emparejar precios con timestamps para no desfasar fechas tras filtrar nulos
+  const zipped = [];
+  for (let i = 0; i < timestamps.length; i++) {
+    const c = quote.close[i];
+    if (c != null) zipped.push({ time: timestamps[i], price: c });
   }
-  setCached(key, { prices, dates });
-  return { prices, dates };
+  const prices = zipped.map(z => z.price);
+  const dates = zipped.map(z => new Date(z.time * 1000));
+  const closesMeta = { prices, dates };
+  setCached(key, closesMeta);
+  return closesMeta;
 }
 
 async function loadSpotPrice() {
-  const key = 'mp_spot_' + asset.id;
-  const cachedData = getCached(key);
-  if (cachedData) return cachedData;
-  // gold-api.com solo cubre metales; petróleo usa Yahoo (último cierre)
-  if (asset.id !== 'oil') {
-    const url = `https://api.gold-api.com/price/${asset.symbol}`;
-    const data = await fetchRetry(url);
-    const price = parseFloat(data.price);
-    setCached(key, price);
-    return price;
-  }
-  return null;
-}
-
+  // Divisas: el precio en vivo sale de Yahoo (último cierre diario); no se usa spot externo
   return null;
 }
 
@@ -428,8 +431,8 @@ function analyzeFundamental(prices, spotPrice) {
   addMetricRow(els.fundMetrics, t('m24h'), fmtPct(change24h), change24h >= 0 ? 'up' : 'down');
   addMetricRow(els.fundMetrics, t('m7d'), fmtPct(change7d), change7d >= 0 ? 'up' : 'down');
   addMetricRow(els.fundMetrics, t('m30d'), fmtPct(change30d), change30d >= 0 ? 'up' : 'down');
-  addMetricRow(els.fundMetrics, t('mDayHigh'), fmtUSD(dayHigh), 'up');
-  addMetricRow(els.fundMetrics, t('mDayLow'), fmtUSD(dayLow), 'down');
+  addMetricRow(els.fundMetrics, t('mDayHigh'), fmtPairPrice(dayHigh), 'up');
+  addMetricRow(els.fundMetrics, t('mDayLow'), fmtPairPrice(dayLow), 'down');
 
   els.fundUp.textContent = `${upProb}%`;
   els.fundDown.textContent = `${downProb}%`;
@@ -470,8 +473,8 @@ function analyzeTechnical(prices) {
   els.techMetrics.innerHTML = '';
   addMetricRow(els.techMetrics, t('metricRsi'), rsi14 ? rsi14.toFixed(1) : '—',
     rsi14 < 30 ? 'up' : rsi14 > 70 ? 'down' : 'neutral');
-  addMetricRow(els.techMetrics, t('metricSma20'), sma20 ? fmtUSD(sma20) : '—', lastPrice > sma20 ? 'up' : 'down');
-  addMetricRow(els.techMetrics, t('metricSma50'), sma50 ? fmtUSD(sma50) : '—', lastPrice > sma50 ? 'up' : 'down');
+  addMetricRow(els.techMetrics, t('metricSma20'), sma20 ? fmtPairPrice(sma20) : '—', lastPrice > sma20 ? 'up' : 'down');
+  addMetricRow(els.techMetrics, t('metricSma50'), sma50 ? fmtPairPrice(sma50) : '—', lastPrice > sma50 ? 'up' : 'down');
   addMetricRow(els.techMetrics, t('metricMacd'), macdVal ? macdVal.toFixed(2) : '—', macdVal >= 0 ? 'up' : 'down');
   addMetricRow(els.techMetrics, t('metricSignal'), signal ? signal.toFixed(2) : '—', 'neutral');
   addMetricRow(els.techMetrics, t('metricHist'), histogram ? histogram.toFixed(2) : '—', histogram >= 0 ? 'up' : 'down');
@@ -564,7 +567,7 @@ function renderChart(prices, dates) {
           titleColor: cc.title,
           bodyColor: cc.body,
           callbacks: {
-            label: (item) => `${item.dataset.label}: ${fmtUSD(item.parsed.y)}`,
+            label: (item) => `${item.dataset.label}: ${fmtPairPrice(item.parsed.y)}`,
           },
         },
       },
@@ -574,7 +577,7 @@ function renderChart(prices, dates) {
           grid: { color: cc.grid },
         },
         y: {
-          ticks: { color: cc.tick, font: { size: 10 }, callback: (v) => fmtUSD(v) },
+          ticks: { color: cc.tick, font: { size: 10 }, callback: (v) => fmtPairPrice(v) },
           grid: { color: cc.grid },
         },
       },
@@ -609,7 +612,7 @@ function renderTradingView() {
       container.innerHTML = '';
       new TradingView.widget({
         container_id: 'tvChart',
-        symbol: asset.tv,
+        symbol: pair.tv,
         interval: '60',
         timezone: 'Etc/UTC',
         theme,
@@ -661,11 +664,11 @@ function renderRangeBlock(upProb, downProb) {
 
   els.rangeMetrics.innerHTML = '';
   addMetricRow(els.rangeMetrics, t('rangeVol'), `${(sigma * 100).toFixed(2)}%`, 'neutral');
-  addMetricRow(els.rangeMetrics, t('rangeUp'), `+${upPct.toFixed(2)}% → ${fmtUSD(high)}`, 'up');
-  addMetricRow(els.rangeMetrics, t('rangeDown'), `−${downPct.toFixed(2)}% → ${fmtUSD(low)}`, 'down');
-  addMetricRow(els.rangeMetrics, t('rangePrice'), `${fmtUSD(low)} – ${fmtUSD(high)}`, 'neutral');
+  addMetricRow(els.rangeMetrics, t('rangeUp'), `+${upPct.toFixed(2)}% → ${fmtPairPrice(high)}`, 'up');
+  addMetricRow(els.rangeMetrics, t('rangeDown'), `−${downPct.toFixed(2)}% → ${fmtPairPrice(low)}`, 'down');
+  addMetricRow(els.rangeMetrics, t('rangePrice'), `${fmtPairPrice(low)} – ${fmtPairPrice(high)}`, 'neutral');
   addMetricRow(els.rangeMetrics, t('rangeClose'), fmtPct(closePct, 2), closePct >= 0 ? 'up' : 'down');
-  addMetricRow(els.rangeMetrics, t('rangeClosePrice'), fmtUSD(closePrice), closePct >= 0 ? 'up' : 'down');
+  addMetricRow(els.rangeMetrics, t('rangeClosePrice'), fmtPairPrice(closePrice), closePct >= 0 ? 'up' : 'down');
 }
 
 function buildSummary(fundamental, technical) {
@@ -714,7 +717,7 @@ function renderAnalysis() {
   const prev = prices.length >= 2 ? prices[prices.length - 2] : current;
   const change24h = prev !== 0 ? ((current - prev) / prev) * 100 : 0;
 
-  els.currentPrice.textContent = fmtUSD(current);
+  els.currentPrice.textContent = fmtPairPrice(current);
   els.priceChange.textContent = `${fmtPct(change24h)} (24h)`;
   els.priceChange.className = `price-change ${change24h >= 0 ? 'up' : 'down'}`;
 
@@ -767,15 +770,15 @@ els.langEs.addEventListener('click', () => setLang('es'));
 els.langEn.addEventListener('click', () => setLang('en'));
 
 document.querySelectorAll('.coin-tab').forEach(a => {
-  a.classList.toggle('active', a.dataset.asset === assetKey);
+  a.classList.toggle('active', a.dataset.pair === pairKey);
 });
 document.querySelectorAll('.nav-link').forEach(a => {
-  a.classList.toggle('active', a.getAttribute('href').startsWith('metals.html'));
+  a.classList.toggle('active', a.getAttribute('href').startsWith('forex.html'));
 });
 const tvBadgeEl = document.getElementById('tvBadge');
-if (tvBadgeEl) tvBadgeEl.textContent = `${asset.tv} · 1h`;
+if (tvBadgeEl) tvBadgeEl.textContent = `${pair.tv} · 1h`;
 const pairBadgeEl = document.getElementById('pairBadge');
-if (pairBadgeEl) pairBadgeEl.textContent = `${asset.symbol} / USD`;
+if (pairBadgeEl) pairBadgeEl.textContent = pair.symbol.replace(/(.{3})(.{3})/, '$1/$2');
 
 init();
 
