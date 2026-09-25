@@ -12,7 +12,7 @@ Plataforma web de **análisis diario multi-activo (cripto, metales y divisas)** 
 - **Probabilidades** de subida y bajada para cada análisis + probabilidad combinada ponderada.
 - **Rango estimado del día**: escenarios alcista/bajista, horquilla de precio y precio esperado al cierre.
 - **Gráficos**: evolución diaria de90 días con medias móviles (Chart.js) + gráfico en tiempo real de1 min (TradingView).
-- **Home** con resumen general del mercado, titular rotatorio (cripto → metales → divisas, cada 30 s de inactividad: cualquier interacción del usuario lo pospone) y botones a cada activo.
+- **Home** con resumen general del mercado, titular rotatorio (cripto → metales → divisas, cada 30 s de inactividad: cualquier interacción del usuario lo pospone) y botones a cada activo. El resumen y las estadísticas **acompañan al titular**: cambian entre datos de cripto, metales o divisas según el título visible.
 - **Sobre nosotros** con metodología y aviso de riesgo.
 - **Responsive**, tema oscuro/claro e idioma ES/EN (persistidos en `localStorage`).
 
@@ -72,7 +72,7 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 ## 🧾 Políticas de uso y versión
 
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
-- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.2.1**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`.
+- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.3.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
 - **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.
 

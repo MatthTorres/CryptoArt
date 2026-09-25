@@ -53,9 +53,17 @@ const I18N = {
     summarySentiment: 'El sentimiento del mercado hoy es de {fng} ({fngVal}/100).',
     summaryLeaders: 'Líderes del día: {list}.',
     summaryLaggards: 'Más castigados hoy: {list}.',
-    summaryToneUp: 'En promedio las 5 criptos analizadas operan al alza en las últimas 24 horas.',
-    summaryToneFlat: 'Las 5 criptos analizadas se mueven laterales, sin una tendencia clara en las últimas 24 horas.',
-    summaryToneDown: 'En promedio las 5 criptos analizadas operan a la baja en las últimas 24 horas.',
+    segCrypto: 'cripto',
+    segMetals: 'metales y energía',
+    segForex: 'divisas',
+    segToneUp: 'En promedio, {n} activos de {seg} operan al alza en las últimas 24 horas.',
+    segToneFlat: 'Los {n} activos de {seg} se mueven laterales, sin una tendencia clara en las últimas 24 horas.',
+    segToneDown: 'En promedio, los {n} activos de {seg} operan a la baja en las últimas 24 horas.',
+    statBest: 'Mejor del día',
+    statWorst: 'Peor del día',
+    statAvg: 'Promedio 24h',
+    segLoading: 'Actualizando los datos de este mercado…',
+    segUnavailable: 'Ahora mismo no hay datos disponibles para este mercado.',
     trendUpStrong: 'Fuerte impulso alcista en las últimas 24 horas.',
     trendUp: 'Tendencia alcista moderada en el día.',
     trendFlat: 'Consolidación / movimiento lateral durante el día.',
@@ -151,9 +159,17 @@ const I18N = {
     summarySentiment: "Today's market sentiment is {fng} ({fngVal}/100).",
     summaryLeaders: "Today's leaders: {list}.",
     summaryLaggards: "Today's laggards: {list}.",
-    summaryToneUp: 'On average, the 5 tracked cryptos are up over the last 24 hours.',
-    summaryToneFlat: 'The 5 tracked cryptos are trading sideways, with no clear trend over the last 24 hours.',
-    summaryToneDown: 'On average, the 5 tracked cryptos are down over the last 24 hours.',
+    segCrypto: 'crypto',
+    segMetals: 'metals and energy',
+    segForex: 'forex',
+    segToneUp: 'On average, {n} {seg} assets are up over the last 24 hours.',
+    segToneFlat: 'The {n} tracked {seg} assets are trading sideways, with no clear trend over the last 24 hours.',
+    segToneDown: 'On average, the {n} {seg} assets are down over the last 24 hours.',
+    statBest: 'Best today',
+    statWorst: 'Worst today',
+    statAvg: '24h average',
+    segLoading: 'Updating the data for this market…',
+    segUnavailable: 'There is no data available for this market right now.',
     trendUpStrong: 'Strong bullish momentum in the last 24 hours.',
     trendUp: 'Moderate uptrend on the day.',
     trendFlat: 'Consolidation / sideways action during the day.',
@@ -315,38 +331,132 @@ function renderHome() {
     grid.appendChild(a);
   });
 
-  // Resumen general del día
+  // El resumen y las estadísticas siguen al titular rotatorio (cripto/metales/divisas)
+  renderSegmentInfo(activeSegmentIndex());
+}
+
+// ---------- Home: información por segmento (sigue al titular rotatorio) ----------
+// El titular rota entre cripto, metales y divisas; el resumen y las estadísticas
+// cambian con él para que la información corresponda al mercado anunciado.
+const SEGMENTS = [
+  { key: 'crypto', labelKey: 'segCrypto' },
+  { key: 'metals', labelKey: 'segMetals' },
+  { key: 'forex', labelKey: 'segForex' },
+];
+const YAHOO_PROXY = 'https://api.allorigins.win/raw?url=';
+const SEGMENT_QUOTES = {
+  metals: [
+    { yahoo: 'GC=F', es: 'Oro', en: 'Gold' },
+    { yahoo: 'SI=F', es: 'Plata', en: 'Silver' },
+    { yahoo: 'PL=F', es: 'Platino', en: 'Platinum' },
+    { yahoo: 'PA=F', es: 'Paladio', en: 'Palladium' },
+    { yahoo: 'CL=F', es: 'Petróleo', en: 'Oil' },
+  ],
+  forex: [
+    { yahoo: 'EURUSD=X', es: 'EUR/USD', en: 'EUR/USD' },
+    { yahoo: 'GBPUSD=X', es: 'GBP/USD', en: 'GBP/USD' },
+    { yahoo: 'JPY=X', es: 'USD/JPY', en: 'USD/JPY' },
+    { yahoo: 'COP=X', es: 'USD/COP', en: 'USD/COP' },
+    { yahoo: 'MXN=X', es: 'USD/MXN', en: 'USD/MXN' },
+  ],
+};
+
+function activeSegmentIndex() {
+  const i = typeof heroActiveIndex === 'function' ? heroActiveIndex() : 0;
+  return i >= 0 && i < SEGMENTS.length ? i : 0;
+}
+function activeSegmentKey() {
+  return (SEGMENTS[activeSegmentIndex()] || SEGMENTS[0]).key;
+}
+
+// Cotizaciones del segmento (metales o divisas) vía el mismo proxy que usan las
+// páginas de análisis. Se pide solo el último tramo diario para el cambio de 24 h.
+async function loadSegmentQuotes(key) {
+  if (cached.segments && cached.segments[key]) return cached.segments[key];
+  const list = SEGMENT_QUOTES[key] || [];
+  const settled = await Promise.allSettled(list.map(q =>
+    fetchRetry(YAHOO_PROXY + encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${q.yahoo}?interval=1d&range=5d`))
+      .then(d => {
+        const closes = (d.chart.result[0].indicators.quote[0].close || []).filter(v => v != null);
+        if (closes.length < 2) throw new Error('sin datos');
+        const last = closes[closes.length - 1];
+        const prev = closes[closes.length - 2];
+        return { es: q.es, en: q.en, chg24: ((last - prev) / prev) * 100 };
+      })
+  ));
+  const quotes = settled.filter(r => r.status === 'fulfilled').map(r => r.value)
+    .sort((a, b) => b.chg24 - a.chg24);
+  if (quotes.length < 2) throw new Error('sin cotizaciones');
+  const seg = { quotes, avg: quotes.reduce((s, q) => s + q.chg24, 0) / quotes.length };
+  if (!cached.segments) cached.segments = {};
+  cached.segments[key] = seg;
+  return seg;
+}
+
+function quoteLabel(q) { return state.lang === 'en' ? q.en : q.es; }
+
+function addStatRow(container, name, value, cls = 'neutral') {
+  const row = document.createElement('div');
+  row.className = 'metric-row';
+  row.innerHTML = `<span class="metric-name">${name}</span><span class="metric-value ${cls}">${value}</span>`;
+  container.appendChild(row);
+}
+
+// Resumen + estadísticas del segmento que muestra el titular en pantalla.
+function renderSegmentInfo(index) {
   const el = document.getElementById('marketSummary');
-  if (el) {
+  const stats = document.getElementById('marketStats');
+  if (!el || !stats) return;
+  const seg = SEGMENTS[index] || SEGMENTS[0];
+
+  // --- Cripto: sentimiento, capitalización total y dominancia ---
+  if (seg.key === 'crypto') {
+    if (!cached.markets || !cached.markets.length) { el.textContent = '—'; stats.innerHTML = ''; return; }
     const sorted = [...cached.markets].sort((a, b) => (b.price_change_percentage_24h ?? 0) - (a.price_change_percentage_24h ?? 0));
     const leaders = sorted.slice(0, 2).map(m => `${m.symbol.toUpperCase()} ${fmtPct(m.price_change_percentage_24h ?? 0)}`).join(', ');
     const laggards = sorted.slice(-2).reverse().map(m => `${m.symbol.toUpperCase()} ${fmtPct(m.price_change_percentage_24h ?? 0)}`).join(', ');
     const avg = cached.markets.reduce((s, m) => s + (m.price_change_percentage_24h ?? 0), 0) / cached.markets.length;
-    const tone = avg > 0.5 ? 'summaryToneUp' : avg < -0.5 ? 'summaryToneDown' : 'summaryToneFlat';
+    const tone = avg > 0.5 ? 'segToneUp' : avg < -0.5 ? 'segToneDown' : 'segToneFlat';
     const parts = [];
     if (cached.fng) parts.push(t('summarySentiment').replace('{fng}', translateFng(cached.fng.value_classification)).replace('{fngVal}', cached.fng.value));
-    parts.push(t(tone));
+    parts.push(t(tone).replace('{n}', cached.markets.length).replace('{seg}', t(seg.labelKey)));
     parts.push(t('summaryLeaders').replace('{list}', leaders));
     parts.push(t('summaryLaggards').replace('{list}', laggards));
     el.textContent = parts.join(' ');
+    stats.innerHTML = '';
+    if (cached.fng) addStatRow(stats, t('marketFearGreed'), `${cached.fng.value} · ${translateFng(cached.fng.value_classification)}`, Number(cached.fng.value) >= 50 ? 'up' : 'down');
+    if (cached.global) {
+      addStatRow(stats, t('marketCap'), fmtBig(cached.global.total_market_cap.usd));
+      addStatRow(stats, t('marketDominance'), `${cached.global.market_cap_percentage.btc.toFixed(1)}%`);
+    }
+    return;
   }
 
-  // Estadísticas de mercado
-  const stats = document.getElementById('marketStats');
-  if (stats) {
+  // --- Metales y divisas: mejor, peor y promedio del segmento ---
+  const data = cached.segments && cached.segments[seg.key];
+  if (!data) {
+    el.textContent = t('segLoading');
     stats.innerHTML = '';
-    const add = (name, value, cls = 'neutral') => {
-      const row = document.createElement('div');
-      row.className = 'metric-row';
-      row.innerHTML = `<span class="metric-name">${name}</span><span class="metric-value ${cls}">${value}</span>`;
-      stats.appendChild(row);
-    };
-    if (cached.fng) add(t('marketFearGreed'), `${cached.fng.value} · ${translateFng(cached.fng.value_classification)}`, Number(cached.fng.value) >= 50 ? 'up' : 'down');
-    if (cached.global) {
-      add(t('marketCap'), fmtBig(cached.global.total_market_cap.usd));
-      add(t('marketDominance'), `${cached.global.market_cap_percentage.btc.toFixed(1)}%`);
-    }
+    loadSegmentQuotes(seg.key)
+      .then(() => { if (activeSegmentIndex() === index) renderSegmentInfo(index); })
+      .catch(() => { if (activeSegmentIndex() === index) el.textContent = t('segUnavailable'); });
+    return;
   }
+  const best = data.quotes[0];
+  const worst = data.quotes[data.quotes.length - 1];
+  const tone = data.avg > 0.15 ? 'segToneUp' : data.avg < -0.15 ? 'segToneDown' : 'segToneFlat';
+  const leaders = data.quotes.slice(0, 2).map(q => `${quoteLabel(q)} ${fmtPct(q.chg24)}`).join(', ');
+  const laggards = data.quotes.slice(-2).reverse().map(q => `${quoteLabel(q)} ${fmtPct(q.chg24)}`).join(', ');
+  el.textContent = [
+    t(tone).replace('{n}', data.quotes.length).replace('{seg}', t(seg.labelKey)),
+    t('summaryLeaders').replace('{list}', leaders),
+    t('summaryLaggards').replace('{list}', laggards),
+  ].join(' ');
+  stats.innerHTML = '';
+  addStatRow(stats, t('statBest'), `${quoteLabel(best)} ${fmtPct(best.chg24)}`, best.chg24 >= 0 ? 'up' : 'down');
+  addStatRow(stats, t('statWorst'), `${quoteLabel(worst)} ${fmtPct(worst.chg24)}`, worst.chg24 >= 0 ? 'up' : 'down');
+  // El color del promedio sigue al signo real: un -0.04% no puede verse en verde.
+  addStatRow(stats, t('statAvg'), fmtPct(data.avg), data.avg > 0.05 ? 'up' : data.avg < -0.05 ? 'down' : 'neutral');
 }
 
 // ---------- Fetch con reintento (cubre el rate-limit429 de CoinGecko) ----------
@@ -412,6 +522,13 @@ async function loadHomeData() {
   const ut = document.getElementById('updateTime');
   if (ut) ut.textContent = new Date().toLocaleString(locale());
   renderHome();
+  // Precarga en segundo plano los datos de metales y divisas para que el titular
+  // rotatorio tenga información al instante. Si un mercado falla, se reintenta al activarlo.
+  ['metals', 'forex'].forEach(key => {
+    loadSegmentQuotes(key)
+      .then(() => { if (activeSegmentKey() === key) renderSegmentInfo(activeSegmentIndex()); })
+      .catch(() => {});
+  });
 }
 
 // ---------- Home: titular rotatorio (cripto → metales → divisas) ----------
@@ -478,6 +595,8 @@ function heroShow(index, isSync) {
     if (i === next) dot.setAttribute('aria-current', 'true');
     else dot.removeAttribute('aria-current');
   });
+  // La información (resumen y estadísticas) acompaña al titular: cambia con el.
+  renderSegmentInfo(next);
 }
 
 function heroAdvance(step) {
