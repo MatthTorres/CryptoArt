@@ -602,6 +602,16 @@ h1, h2 { font-family: 'Sora', sans-serif; }
 }
 .home-section { margin-bottom: 10px; }
 .home-section h2 { margin-bottom: 6px; }
+/* Esqueletos del home: pintan la retícula al instante, antes de que llegue la red. */
+.skeleton-card { pointer-events: none; }
+.sk { border-radius: 8px; background: linear-gradient(90deg, var(--surface) 25%, var(--surface-border) 50%, var(--surface) 75%); background-size: 200% 100%; animation: sk-shimmer 1.2s infinite linear; }
+.sk-line { height: 14px; margin: 8px 0; }
+.sk-title { height: 40px; }
+.sk-price { height: 26px; width: 60%; }
+.sk-chg { width: 80%; }
+.sk-cta { width: 55%; }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+@keyframes sk-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .home-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

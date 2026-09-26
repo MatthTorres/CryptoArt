@@ -302,9 +302,29 @@ function trendKey(change24h) {
 }
 
 // ---------- Home: tarjetas + resumen del mercado ----------
+function renderHomeSkeletons(grid, n = 5) {
+  if (!grid) return;
+  // Solo pinta esqueletos si aún no hay tarjetas reales.
+  if (grid.querySelector('.coin-card')) return;
+  grid.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div');
+    d.className = 'coin-card card skeleton-card';
+    d.setAttribute('aria-hidden', 'true');
+    d.innerHTML = '<div class="sk sk-line sk-title"></div>'
+      + '<div class="sk sk-line sk-price"></div>'
+      + '<div class="sk sk-line sk-chg"></div>'
+      + '<div class="sk sk-line sk-cta"></div>';
+    grid.appendChild(d);
+  }
+}
+
 function renderHome() {
   const grid = document.getElementById('coinCards');
-  if (!grid || !cached.markets) return;
+  // Sin caché todavía (primera visita): pinta esqueletos al instante para que
+  // la retícula y la navegación respondan antes de que llegue la red.
+  if (!grid) return;
+  if (!cached.markets) { renderHomeSkeletons(grid); return; }
 
   grid.innerHTML = '';
   cached.markets.forEach(m => {
@@ -315,7 +335,7 @@ function renderHome() {
     a.href = `analysis.html?coin=${m.id}`;
     a.innerHTML = `
       <div class="coin-card-head">
-        <img src="${m.image}" alt="${m.symbol}" width="40" height="40">
+        <img src="${m.image}" alt="${m.symbol}" width="40" height="40" loading="lazy" decoding="async">
         <div>
           <h3>${m.name}</h3>
           <span class="coin-sym">${m.symbol.toUpperCase()}</span>
@@ -482,10 +502,17 @@ function renderSegmentInfo(index) {
 }
 
 // ---------- Fetch con reintento (cubre el rate-limit429 de CoinGecko) ----------
+// Timeout corto: la primera visita no puede quedarse colgada esperando a una
+// API lenta. Si un proveedor tarda >8 s, se aborta y se usa caché/fallback.
+function fetchWithTimeout(url, ms = 8000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+}
 async function fetchRetry(url, tries = 3) {
   for (let i = 0; i < tries; i++) {
     try {
-      const res = await fetch(url);
+      const res = await fetchWithTimeout(url, 8000);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {
@@ -526,17 +553,52 @@ function handleHomeError(err) {
   showRetry(document.getElementById('statusRow'), loadHomeWithRetry);
 }
 
+const HOME_STORE_KEY = 'mp_home_v1';
+const HOME_TTL = 15 * 60 * 1000; // 15 min: el home reutiliza datos entre visitas
+const HOME_BACKUP_TTL = 24 * 60 * 60 * 1000; // 24 h: última red ante fallo total
+function readHomeStore(maxAge) {
+  try {
+    const raw = localStorage.getItem(HOME_STORE_KEY);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    return Date.now() - ts < maxAge ? data : null;
+  } catch { return null; }
+}
+function writeHomeStore(data) {
+  try { localStorage.setItem(HOME_STORE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch { /* cuota */ }
+}
+
 async function loadHomeData() {
+  // 1) Pintado instantáneo: si hay caché (15 min o respaldo 24 h), se muestra
+  // AHORA y la red solo refresca en segundo plano. Así abrir la web y navegar
+  // entre páginas es inmediato, incluso con la API lenta o caída.
+  const quick = readHomeStore(HOME_TTL) || readHomeStore(HOME_BACKUP_TTL);
+  if (quick) {
+    applyHomePayload(quick);
+    // Refresco silencioso en segundo plano (no bloquea la navegación).
+    refreshHomeInBackground();
+    // Precarga diferida de metales/divisas sin competir con el pintado inicial.
+    scheduleSegmentPrefetch();
+    return;
+  }
+  // 2) Sin caché (primera visita): red con timeout + respaldo degradado.
   const ids = 'bitcoin,ethereum,solana,ripple,dogecoin';
   const [markets, fngRes, globalRes] = await Promise.all([
     fetchRetry(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&price_change_percentage=24h,7d&sparkline=false`),
-    fetchRetry('https://api.alternative.me/fng/?limit=1'),
-    fetchRetry('https://api.coingecko.com/api/v3/global'),
+    fetchRetry('https://api.alternative.me/fng/?limit=1').catch(() => null),
+    fetchRetry('https://api.coingecko.com/api/v3/global').catch(() => null),
   ]);
   if (!Array.isArray(markets) || !markets.length) throw new Error('markets vacío');
-  cached.markets = markets;
-  cached.fng = fngRes.data[0];
-  cached.global = globalRes.data;
+  const payload = { markets, fng: fngRes && fngRes.data ? fngRes.data[0] : null, global: globalRes && globalRes.data ? globalRes.data : null };
+  writeHomeStore(payload);
+  applyHomePayload(payload);
+  scheduleSegmentPrefetch();
+}
+
+function applyHomePayload(payload) {
+  cached.markets = payload.markets;
+  cached.fng = payload.fng || cached.fng;
+  cached.global = payload.global || cached.global;
   state.statusKey = 'homeOk';
   const st = document.getElementById('statusText');
   if (st) st.textContent = t(state.statusKey);
@@ -544,10 +606,30 @@ async function loadHomeData() {
   const ut = document.getElementById('updateTime');
   if (ut) ut.textContent = new Date().toLocaleString(locale());
   renderHome();
+}
+
+// Refresco en segundo plano: no toca el estado visible salvo que tenga éxito.
+async function refreshHomeInBackground() {
+  try {
+    const ids = 'bitcoin,ethereum,solana,ripple,dogecoin';
+    const [markets, fngRes, globalRes] = await Promise.all([
+      fetchRetry(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&price_change_percentage=24h,7d&sparkline=false`, 1),
+      fetchRetry('https://api.alternative.me/fng/?limit=1', 1).catch(() => null),
+      fetchRetry('https://api.coingecko.com/api/v3/global', 1).catch(() => null),
+    ]);
+    if (!Array.isArray(markets) || !markets.length) return;
+    const payload = { markets, fng: fngRes && fngRes.data ? fngRes.data[0] : null, global: globalRes && globalRes.data ? globalRes.data : null };
+    writeHomeStore(payload);
+    applyHomePayload(payload);
+  } catch { /* se mantiene lo cacheado */ }
+}
+
+function scheduleSegmentPrefetch() {
   // Precarga en segundo plano los datos de metales y divisas para que el titular
   // rotatorio tenga información al instante. Se hacen uno detrás de otro (no 10
-  // en paralelo) para no disparar el rate-limit del proxy gratuito.
-  const prefetch = async () => {
+  // en paralelo) para no disparar el rate-limit del proxy gratuito, y de forma
+  // diferida para no competir con el primer pintado.
+  const run = async () => {
     for (const key of ['metals', 'forex']) {
       try {
         await loadSegmentQuotes(key);
@@ -555,7 +637,8 @@ async function loadHomeData() {
       } catch { /* se reintenta al activar ese mercado */ }
     }
   };
-  prefetch();
+  if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 4000 });
+  else setTimeout(run, 1500);
 }
 
 // ---------- Home: titular rotatorio (cripto → metales → divisas) ----------
@@ -735,6 +818,9 @@ function initSite() {
 
   const grid = document.getElementById('coinCards');
   if (grid) {
+    // La retícula se pinta al instante (esqueletos) para que los enlaces a
+    // Cripto/Metales/Divisas respondan sin esperar a la red.
+    renderHomeSkeletons(grid);
     loadHomeWithRetry();
   }
 }
