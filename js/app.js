@@ -70,6 +70,7 @@ const I18N = {
     statusOk: 'Análisis actualizado correctamente.',
     statusError: '⚠️ No se pudieron cargar los datos en vivo (posible límite de la API o falta de conexión). Pulsa Reintentar en unos segundos.',
     chartUnavailable: 'No se pudo cargar el gráfico de evolución. El resto del análisis sí es válido.',
+    tvUnavailable: 'No se pudo cargar el gráfico en tiempo real. Verifica tu conexión.',
     statusLoadingCoin: 'Cargando datos de {coin}…',
     retry: 'Reintentar',
     fundTitle: 'Análisis Fundamental',
@@ -148,6 +149,7 @@ const I18N = {
     statusOk: 'Analysis updated successfully.',
     statusError: '⚠️ Could not load live data (possible API rate limit or no connection). Press Retry in a few seconds.',
     chartUnavailable: 'The price chart could not be loaded. The rest of the analysis is still valid.',
+    tvUnavailable: 'The real-time chart could not be loaded. Check your connection.',
     statusLoadingCoin: 'Loading {coin} data…',
     retry: 'Retry',
     fundTitle: 'Fundamental Analysis',
@@ -582,7 +584,8 @@ function renderChart(prices, dates) {
 
 function drawChart(canvas, prices, dates) {
   const ctx = canvas.getContext('2d');
-  const labels = dates.map(d => d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }));
+  const tag = state.lang === 'es' ? 'es-ES' : 'en-US';
+  const labels = dates.map(d => d.toLocaleDateString(tag, { day: '2-digit', month: 'short' }));
   const sma20Series = smaSeries(prices, 20);
   const sma50Series = smaSeries(prices, 50);
   const cc = chartColors();
@@ -867,7 +870,7 @@ function createTradingView() {
     })
     .catch(err => {
       console.error('Error cargando TradingView:', err);
-      container.innerHTML = '<p class="card-desc">No se pudo cargar el gráfico de TradingView. Verifica tu conexión.</p>';
+      container.innerHTML = `<p class="card-desc">${t('tvUnavailable')}</p>`;
     });
 }
 
