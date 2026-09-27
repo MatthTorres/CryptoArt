@@ -100,6 +100,7 @@ const I18N = {
     mSentiment: 'Sentimiento comunidad (alcista)',
     mVolCap: 'Volumen 24h / Cap. mercado',
     mCap: 'Capitalización de mercado',
+    mUnavailable: 'No disponible',
     metricRsi: 'Impulso del mercado',
     metricSma20: 'Tendencia corta',
     metricSma50: 'Tendencia larga',
@@ -177,6 +178,7 @@ const I18N = {
     mSentiment: 'Community sentiment (bullish)',
     mVolCap: '24h Volume / Mkt Cap',
     mCap: 'Market capitalization',
+    mUnavailable: 'Not available',
     metricRsi: 'Market momentum',
     metricSma20: 'Short-term trend',
     metricSma50: 'Long-term trend',
@@ -708,12 +710,14 @@ function analyzeFundamental(market, fng) {
   addMetricRow(els.fundMetrics, t('m7d'), fmtPct(change7d), change7d >= 0 ? 'up' : 'down');
   addMetricRow(els.fundMetrics, t('mFng'), `${fngValue} · ${translateFng(fngLabel)}`, fngValue >= 50 ? 'up' : 'down');
   addMetricRow(els.fundMetrics, t('mSentiment'), `${sentimentUp.toFixed(0)}%`, sentimentUp >= 50 ? 'up' : 'down');
+  // Sin market-cap (respaldo spot): no se inventa un $0. Se muestra el volumen
+  // real y la capitalización como no disponible.
   if (marketCap > 0) {
     addMetricRow(els.fundMetrics, t('mVolCap'), `${volMcapRatio.toFixed(2)}%`, 'neutral');
     addMetricRow(els.fundMetrics, t('mCap'), fmtUSD(marketCap), 'neutral');
   } else {
     addMetricRow(els.fundMetrics, t('mVolCap'), fmtUSD(volume24h) + ' (24h)', 'neutral');
-    addMetricRow(els.fundMetrics, t('mCap'), state.lang === 'es' ? 'Vía Binance (spot)' : 'Via Binance (spot)', 'neutral');
+    addMetricRow(els.fundMetrics, t('mCap'), t('mUnavailable'), 'neutral');
   }
 
   els.fundUp.textContent = `${upProb}%`;
