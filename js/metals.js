@@ -92,8 +92,8 @@ const I18N = {
     m7d: 'Variación 7 días',
     m30d: 'Variación 30 días',
     mVol: 'Volumen último día vs media 20d',
-    mDayHigh: 'Máximo del día',
-    mDayLow: 'Mínimo del día',
+    mDayHigh: 'Máximo 7 días',
+    mDayLow: 'Mínimo 7 días',
     metricRsi: 'Impulso del mercado',
     metricSma20: 'Tendencia corta',
     metricSma50: 'Tendencia larga',
@@ -166,8 +166,8 @@ const I18N = {
     m7d: '7-day change',
     m30d: '30-day change',
     mVol: 'Last day volume vs 20d average',
-    mDayHigh: 'Day high',
-    mDayLow: 'Day low',
+    mDayHigh: '7-day high',
+    mDayLow: '7-day low',
     metricRsi: 'Market momentum',
     metricSma20: 'Short-term trend',
     metricSma50: 'Long-term trend',
@@ -535,8 +535,11 @@ function analyzeFundamental(prices, spotPrice) {
   const change24h = n >= 2 ? ((prices[n - 1] - prices[n - 2]) / prices[n - 2]) * 100 : 0;
   const change7d = n >= 8 ? ((prices[n - 1] - prices[n - 8]) / prices[n - 8]) * 100 : 0;
   const change30d = n >= 31 ? ((prices[n - 1] - prices[n - 31]) / prices[n - 31]) * 100 : 0;
-  const dayHigh = Math.max(...prices.slice(-1));
-  const dayLow = Math.min(...prices.slice(-1));
+  // Máximo/mínimo de los últimos 7 cierres diarios (los datos son diarios, no
+  // intradía: con slice(-1) el max/min siempre sería el último precio).
+  const win7 = prices.slice(-7);
+  const weekHigh = Math.max(...win7);
+  const weekLow = Math.min(...win7);
   const current = spotPrice ?? lastPrice;
 
   let score = 50;
@@ -551,8 +554,8 @@ function analyzeFundamental(prices, spotPrice) {
   addMetricRow(els.fundMetrics, t('m24h'), fmtPct(change24h), change24h >= 0 ? 'up' : 'down');
   addMetricRow(els.fundMetrics, t('m7d'), fmtPct(change7d), change7d >= 0 ? 'up' : 'down');
   addMetricRow(els.fundMetrics, t('m30d'), fmtPct(change30d), change30d >= 0 ? 'up' : 'down');
-  addMetricRow(els.fundMetrics, t('mDayHigh'), fmtUSD(dayHigh), 'up');
-  addMetricRow(els.fundMetrics, t('mDayLow'), fmtUSD(dayLow), 'down');
+  addMetricRow(els.fundMetrics, t('mDayHigh'), fmtUSD(weekHigh), 'up');
+  addMetricRow(els.fundMetrics, t('mDayLow'), fmtUSD(weekLow), 'down');
 
   els.fundUp.textContent = `${upProb}%`;
   els.fundDown.textContent = `${downProb}%`;
