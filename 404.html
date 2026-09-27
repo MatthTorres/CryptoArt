@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="errorTitle">MarketPulse — Página no encontrada</title>
+<meta name="robots" content="noindex, follow">
+<meta name="description" content="La página solicitada no existe. Vuelve al inicio de MarketPulse para seguir con el análisis diario de cripto, metales y divisas.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0b0f1a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f4f6fb" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/svg+xml" href="assets/logo-marketpulse.svg">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=7">
+</head>
+<body data-page="error">
+  <div class="bg-glow"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <img src="assets/logo-marketpulse.svg" alt="MarketPulse" class="brand-icon" width="48" height="48">
+      <div>
+        <h1>Market<span class="brand-accent">Pulse</span></h1>
+        <p class="tagline" data-i18n="homeTagline">Cripto · Metales · Forex — Fundamental + Técnico</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="lang-switch" role="group" aria-label="Idioma / Language">
+        <button class="lang-btn active" id="langEs" type="button">ES</button>
+        <button class="lang-btn" id="langEn" type="button">EN</button>
+      </div>
+      <button class="theme-btn" id="themeToggle" type="button" aria-label="Cambiar tema">🌙</button>
+    </div>
+  </header>
+
+  <nav class="main-nav" aria-label="Navegación principal">
+    <a href="index.html" class="nav-link" data-i18n="navHome">Inicio</a>
+    <a href="analysis.html?coin=bitcoin" class="nav-link" data-i18n="navAnalysis">Cripto</a>
+    <a href="metals.html?asset=gold" class="nav-link" data-i18n="navMetals">Metales</a>
+    <a href="forex.html?pair=eurusd" class="nav-link" data-i18n="navForex">Divisas</a>
+    <a href="about.html" class="nav-link" data-i18n="navAbout">Sobre nosotros</a>
+  </nav>
+
+  <main class="container">
+    <section class="hero card">
+      <h2 data-i18n="errorHeading">Página no encontrada</h2>
+      <p class="hero-text" data-i18n="errorText">La ruta solicitada no existe o ha cambiado. Vuelve al inicio para seguir con el análisis diario de cripto, metales y divisas.</p>
+      <p><a class="retry-btn" href="index.html" data-i18n="errorCta">Ir al inicio →</a></p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <p class="footer-meta" data-i18n="footerBrandLine">MarketPulse · Análisis multi-activo: cripto, metales y divisas</p>
+      <nav class="footer-links" aria-label="Enlaces del sitio">
+        <a href="legal.html" data-i18n="footerLegal">Políticas de uso y responsabilidad</a>
+        <span class="footer-sep">·</span>
+        <a href="about.html" data-i18n="navAbout">Sobre nosotros</a>
+      </nav>
+      <p class="footer-meta">
+        <span data-i18n="footerVersion">Versión</span> <span data-app-version>v3.5.0</span>
+        · <span data-i18n="footerRights">Todos los derechos reservados.</span>
+        © <span data-app-year>2026</span> MarketPulse
+      </p>
+    </div>
+  </footer>
+
+  <script defer src="js/version.js?v=12"></script>
+  <script defer src="js/site.js?v=15"></script>
+</body>
+</html>

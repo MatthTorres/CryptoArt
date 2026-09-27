@@ -25,12 +25,19 @@ Plataforma web de **análisis diario multi-activo (cripto, metales y divisas)** 
 ├── forex.html        # Análisis divisas ( ?pair=eurusd|gbpusd|usdjpy|usdcop|usdmxn [&inv=1 invierte] )
 ├── about.html        # Sobre nosotros
 ├── legal.html        # Políticas de uso y liberación de responsabilidad
+├── 404.html           # Página de error personalizada (HTTP 404, noindex, bilingüe)
 ├── css/style.css     # Estilos + temas claro/oscuro
 ├── js/app.js         # Lógica de análisis cripto y gráficos
 ├── js/metals.js      # Lógica de análisis metales/energía
 ├── js/forex.js       # Lógica de análisis divisas
 ├── js/site.js        # Home/About: tema, idioma y datos de mercado
 ├── js/version.js     # Versión del programa + sello del pie (versión, copyright, año)
+├── robots.txt        # Permiso a rutas + URL del sitemap
+├── sitemap.xml       # Las 6 páginas indexables
+├── _headers          # Caché y seguridad (Netlify/Cloudflare Pages; el resto lo ignora)
+├── tools/            # make_social_image.py · set_site_origin.py · check_site.py
+├── assets/og-marketpulse.png     # Imagen social 1200×630 (Open Graph)
+├── assets/apple-touch-icon.png   # Icono 180×180 para pantalla de inicio
 └── assets/logo-marketpulse.svg   # Logo global
 ```
 
@@ -38,7 +45,7 @@ Plataforma web de **análisis diario multi-activo (cripto, metales y divisas)** 
 
 ```bash
 cd bitcoin-dashboard
-python -m http.server8090
+python -m http.server 8090
 # abrir http://localhost:8090
 ```
 
@@ -49,6 +56,35 @@ Es una web **100% estática** (sin backend). Opciones gratuitas:
 - **Netlify Drop**: arrastrar la carpeta a https://app.netlify.com/drop
 - **GitHub Pages**: subir a un repo → Settings → Pages → rama `main`
 - **Vercel / Cloudflare Pages**: CLI o integración con GitHub
+
+### Dominio y SEO (paso a paso)
+
+Hasta que haya hosting, las URLs absolutas (canonical, `og:url`, `og:image`,
+`twitter:image`, `robots.txt` y `sitemap.xml`) usan el dominio reservado
+`https://marketpulse.example` (`.example` lo reserva la IANA): si se publica sin fijar el
+origen, sencillamente no se genera la tarjeta social ni se indexa. Para activarlo:
+
+```bash
+# 1) fija el dominio real en todas las URLs absolutas (incluye subcarpeta si aplica)
+python tools/set_site_origin.py https://tudominio.com
+
+# 2) comprueba que todo sigue en orden y que no queda ningún placeholder
+python tools/check_site.py --require-domain
+
+# 3) publica la carpeta como sitio estático (los 404 usan 404.html por convención)
+```
+
+Detalles según el host:
+
+- `_headers` lo entienden **Netlify** y **Cloudflare Pages** (caché `immutable` para
+  `css/` y `js/` gracias al cache-bust `?v=N`, y `no-cache` para el HTML). En **Vercel**
+  esas cabeceras se configuran en `vercel.json`; en **GitHub Pages** no se pueden fijar
+  (el `?v=N` ya evita que el HTML quede viejo en caché).
+- `404.html` lo detectan los cuatro hosts anteriores sin configuración extra.
+- Al cambiar `APP_VERSION` o cualquier JS/CSS modificado: sube su `?v=N`, actualiza la
+  línea *Cache-bust en uso* y ejecuta `python tools/check_site.py` (lo verifica solo).
+- Tras publicar: da de alta el `sitemap.xml` en **Search Console** y valida la tarjeta
+  con el **Sharing Debugger** de Meta y **cards.twitter.com** (memorizan la imagen).
 
 ## 🗄️ Fuentes de datos (documentación interna)
 
@@ -84,7 +120,7 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
 - **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.5.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`, y cada HTML lleva el mismo `vX.Y.Z` como respaldo por si el navegador no ejecuta JS.
-- **Cache-bust en uso**: `css/style.css?v=7`, `js/version.js?v=12`, `js/site.js?v=14`, `js/app.js?v=12`, `js/metals.js?v=11`, `js/forex.js?v=11`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
+- **Cache-bust en uso**: `css/style.css?v=7`, `js/version.js?v=12`, `js/site.js?v=15`, `js/app.js?v=12`, `js/metals.js?v=11`, `js/forex.js?v=11`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
 - **Pie de página unificado**: las 6 páginas cierran con las mismas dos líneas (versión con `data-app-version` y copyright con `data-app-year`) y con **dos enlaces que nunca apuntan a la página actual**: `index/analysis/metals/forex` → políticas + *Sobre nosotros*, `about` → políticas + *Inicio*, `legal` → *Inicio* + *Sobre nosotros*. La primera línea de `index/analysis/metals/forex/about` es el sello de datos de mercado (`footerPrefix` + `#updateTime`), que `js/version.js` rellena al cargar y el JS de cada sección sustituye después por la hora real del último dato; `legal.html` no muestra hora y usa la línea de marca (`footerBrandLine`) porque no tiene datos de mercado.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
 - **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.
