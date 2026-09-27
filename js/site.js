@@ -363,7 +363,13 @@ const SEGMENTS = [
   { key: 'metals', labelKey: 'segMetals' },
   { key: 'forex', labelKey: 'segForex' },
 ];
-const YAHOO_PROXY = 'https://api.allorigins.win/raw?url=';
+const SEGMENT_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://api.cors.lol/?url=',
+];
+const SEGMENT_HOSTS = ['https://query1.finance.yahoo.com', 'https://query2.finance.yahoo.com'];
+// Misma cascada que las páginas de análisis (2 hosts × 2 proxies): prueba cada
+// combinación con 1 intento y avanza en cuanto una falla, sin pausas.
 const SEGMENT_QUOTES = {
   metals: [
     { yahoo: 'GC=F', es: 'Oro', en: 'Gold' },
@@ -389,8 +395,8 @@ function activeSegmentKey() {
   return (SEGMENTS[activeSegmentIndex()] || SEGMENTS[0]).key;
 }
 
-// Cotizaciones del segmento (metales o divisas) vía el mismo proxy que usan las
-// páginas de análisis. Se pide solo el último tramo diario para el cambio de 24 h.
+// Cotizaciones del segmento (metales o divisas) con la misma cascada de proxies
+// que las páginas de análisis. Se pide solo el último tramo diario para el cambio de 24 h.
 // Se guardan en localStorage: en la siguiente visita del home ya no se pide nada.
 const SEGMENT_TTL = 15 * 60 * 1000;
 function segmentStoreKey(key) { return 'mp_seg_' + key; }
@@ -406,6 +412,21 @@ function writeSegmentStore(key, data) {
   try { localStorage.setItem(segmentStoreKey(key), JSON.stringify({ ts: Date.now(), data })); } catch { /* cuota */ }
 }
 
+async function fetchSegmentChart(yahooSymbol) {
+  const path = `/v8/finance/chart/${yahooSymbol}?interval=1d&range=5d`;
+  let lastErr = null;
+  for (const host of SEGMENT_HOSTS) {
+    for (const proxy of SEGMENT_PROXIES) {
+      try {
+        const data = await fetchRetry(proxy + encodeURIComponent(host + path), 1);
+        if (data && data.chart && data.chart.result && data.chart.result[0]) return data;
+        lastErr = new Error('yahoo empty');
+      } catch (e) { lastErr = e; }
+    }
+  }
+  throw lastErr || new Error('segment Yahoo failed');
+}
+
 async function loadSegmentQuotes(key) {
   if (cached.segments && cached.segments[key]) return cached.segments[key];
   const stored = readSegmentStore(key);
@@ -416,7 +437,7 @@ async function loadSegmentQuotes(key) {
   }
   const list = SEGMENT_QUOTES[key] || [];
   const settled = await Promise.allSettled(list.map(q =>
-    fetchRetry(YAHOO_PROXY + encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${q.yahoo}?interval=1d&range=5d`), 1)
+    fetchSegmentChart(q.yahoo)
       .then(d => {
         const closes = (d.chart.result[0].indicators.quote[0].close || []).filter(v => v != null);
         if (closes.length < 2) throw new Error('sin datos');
