@@ -447,12 +447,22 @@ async function fetchYahooChart(yahooSymbol) {
 const CACHE_TTL = 15 * 60 * 1000;
 const CACHE_BACKUP_TTL = 24 * 60 * 60 * 1000;
 const cached = {};
+// Las fechas viajan como strings ISO en session/localStorage: se reviven a Date
+// al leer, o drawChart fallaría (d.toLocaleDateString no existe en strings) en
+// la 2ª visita a un par ya cacheado.
+function reviveHistory(data) {
+  if (data && Array.isArray(data.dates)) {
+    data.dates = data.dates.map(d => (d instanceof Date ? d : new Date(d)));
+  }
+  return data;
+}
 function getCached(key) {
   try {
     const raw = sessionStorage.getItem(key);
     if (!raw) return null;
     const { ts, data } = JSON.parse(raw);
-    return Date.now() - ts < CACHE_TTL ? data : null;
+    if (Date.now() - ts > CACHE_TTL) return null;
+    return reviveHistory(data);
   } catch { return null; }
 }
 function setCached(key, data) {
@@ -465,7 +475,8 @@ function getBackup(key) {
     const raw = localStorage.getItem('backup_' + key);
     if (!raw) return null;
     const { ts, data } = JSON.parse(raw);
-    return Date.now() - ts < CACHE_BACKUP_TTL ? data : null;
+    if (Date.now() - ts > CACHE_BACKUP_TTL) return null;
+    return reviveHistory(data);
   } catch { return null; }
 }
 function setBackup(key, data) {
