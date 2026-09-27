@@ -27,7 +27,8 @@ function stampVersionFooter() {
   document.querySelectorAll('[data-app-release]').forEach(el => {
     el.textContent = APP_RELEASE[lang] || APP_RELEASE.es;
   });
-  // En páginas sin datos de mercado (p. ej. legal.html) el sello sirve de hora de carga.
+  // En páginas sin datos de mercado que sí muestran el sello (about.html) la hora
+  // de carga hace de "Actualizado:"; legal.html no incluye hora y usa footerBrandLine.
   const ut = document.getElementById('updateTime');
   if (ut && ut.textContent.trim() === '—') {
     ut.textContent = new Date().toLocaleString(lang === 'es' ? 'es-ES' : 'en-US');
