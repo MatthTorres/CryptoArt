@@ -77,11 +77,14 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 - **Gráfico en vivo diferido**: el widget de TradingView es el recurso más pesado y está bajo el pliegue, así que se crea al entrar en pantalla con `IntersectionObserver` (red de seguridad a los 4 s) en vez de bloquear la carga inicial.
 - **Scripts con `defer`** para que Chart.js (201 KB) no bloquee el pintado inicial.
 - **Home**: los datos de metales y divisas del titular se piden de uno en uno (no 10 en paralelo, que disparaba el rate-limit del proxy) y se cachean 15 min en `localStorage`.
+- **Inversión de pares (divisas)**: el modo `?inv=1` se pinta **antes** de pedir datos y cada pestaña de par lleva su `data-base-href`, de modo que al cambiar de par o de sección se conserva la dirección invertida sin duplicar el parámetro `inv`.
+- **Navegación y accesibilidad**: la sección activa se marca en el HTML con `class="nav-link active"` + `aria-current="page"`, y el JS de cada sección (o `site.js` en home/about) vuelve a sincronizar ambos al cambiar de idioma o de activo.
 
 ## 🧾 Políticas de uso y versión
 
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
-- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.4.2**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`.
+- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.5.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`, y cada HTML lleva el mismo `vX.Y.Z` como respaldo por si el navegador no ejecuta JS.
+- **Cache-bust en uso**: `css/style.css?v=7`, `js/version.js?v=11`, `js/site.js?v=14`, `js/app.js?v=12`, `js/metals.js?v=11`, `js/forex.js?v=11`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
 - **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.
 

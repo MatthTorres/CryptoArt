@@ -6,8 +6,9 @@
 <title data-i18n="docTitle">MarketPulse — Análisis de Divisas</title>
 <link rel="icon" type="image/svg+xml" href="assets/logo-marketpulse.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=6">
+<link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body>
   <div class="bg-glow"></div>
@@ -38,16 +39,16 @@
     <a href="index.html" class="nav-link" data-i18n="navHome">Inicio</a>
     <a href="analysis.html?coin=bitcoin" class="nav-link" data-i18n="navAnalysis">Cripto</a>
     <a href="metals.html?asset=gold" class="nav-link" data-i18n="navMetals">Metales</a>
-    <a href="forex.html?pair=eurusd" class="nav-link nav-here" aria-current="page">Divisas</a>
+    <a href="forex.html?pair=eurusd" class="nav-link active" data-i18n="navForex" aria-current="page">Divisas</a>
     <a href="about.html" class="nav-link" data-i18n="navAbout">Sobre nosotros</a>
   </nav>
 
   <div class="coin-tabs" id="assetTabs" role="tablist" aria-label="Activos">
-<a class="coin-tab" href="forex.html?pair=eurusd" data-pair="eurusd">€ · EUR/USD</a>
-<a class="coin-tab" href="forex.html?pair=usdcop" data-pair="usdcop">$ · USD/COP</a>
-<a class="coin-tab" href="forex.html?pair=gbpusd" data-pair="gbpusd">£ · GBP/USD</a>
-<a class="coin-tab" href="forex.html?pair=usdjpy" data-pair="usdjpy">¥ · USD/JPY</a>
-<a class="coin-tab" href="forex.html?pair=usdmxn" data-pair="usdmxn">$ · USD/MXN</a>
+<a class="coin-tab" href="forex.html?pair=eurusd" data-pair="eurusd" data-base-href="forex.html?pair=eurusd">€ · EUR/USD</a>
+<a class="coin-tab" href="forex.html?pair=usdcop" data-pair="usdcop" data-base-href="forex.html?pair=usdcop">$ · USD/COP</a>
+<a class="coin-tab" href="forex.html?pair=gbpusd" data-pair="gbpusd" data-base-href="forex.html?pair=gbpusd">£ · GBP/USD</a>
+<a class="coin-tab" href="forex.html?pair=usdjpy" data-pair="usdjpy" data-base-href="forex.html?pair=usdjpy">¥ · USD/JPY</a>
+<a class="coin-tab" href="forex.html?pair=usdmxn" data-pair="usdmxn" data-base-href="forex.html?pair=usdmxn">$ · USD/MXN</a>
   </div>
 
   <main class="container">
@@ -171,7 +172,7 @@
         <a href="about.html" data-i18n="navAbout">Sobre nosotros</a>
       </nav>
       <p class="footer-meta">
-        <span data-i18n="footerVersion">Versión</span> <span data-app-version>v3.4.2</span>
+        <span data-i18n="footerVersion">Versión</span> <span data-app-version>v3.5.0</span>
         · <span data-i18n="footerRights">Todos los derechos reservados.</span>
         © <span data-app-year>2026</span> MarketPulse
       </p>
@@ -180,7 +181,7 @@
 
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script defer src="js/version.js?v=11"></script>
-  <script defer src="js/forex.js?v=10"></script>
+  <script defer src="js/forex.js?v=11"></script>
 </body>
 </html>
 

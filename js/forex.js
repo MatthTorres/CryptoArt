@@ -65,7 +65,7 @@ const I18N = {
   es: {
     docTitle: 'MarketPulse — Análisis de {coin}',
     tagline: 'Análisis diario de divisas',
-    priceLabel: 'Precio actual',
+    priceLabel: 'Último cierre diario',
     invertPair: 'Invertir par',
     invertTo: 'Ver {symbol}',
     statusLoading: 'Cargando datos del mercado en tiempo real…',
@@ -141,7 +141,7 @@ const I18N = {
   en: {
     docTitle: 'MarketPulse — {coin} Analysis',
     tagline: 'Daily forex analysis',
-    priceLabel: 'Current price',
+    priceLabel: 'Last daily close',
     invertPair: 'Invert pair',
     invertTo: 'View {symbol}',
     statusLoading: 'Loading live market data…',
@@ -928,14 +928,17 @@ function updateInvertUi() {
   const hint = t('invertTo').replace('{symbol}', target);
   btn.title = hint;
   btn.setAttribute('aria-label', hint);
-  // Pestañas: conservan el modo invertido al cambiar de par y muestran la dirección visible
+  // Pestañas: conservan el modo invertido al cambiar de par y muestran la dirección visible.
+  // Se aplica desde el primer pintado (no solo al pulsar ⇄), para que entrar con
+  // ?inv=1 no pierda la dirección al cambiar de pestaña.
   document.querySelectorAll('.coin-tab').forEach(a => {
     const cfg = PAIRS[a.dataset.pair];
     if (!cfg) return;
     if (!a.dataset.icon) a.dataset.icon = a.textContent.split('·')[0].trim();
+    const base = a.dataset.baseHref || `forex.html?pair=${cfg.id}`;
     const sym = state.inverted ? cfg.symbol.slice(3) + cfg.symbol.slice(0, 3) : cfg.symbol;
     a.textContent = `${a.dataset.icon} · ${sym.replace(/(.{3})(.{3})/, '$1/$2')}`;
-    a.setAttribute('href', state.inverted ? `forex.html?pair=${cfg.id}&inv=1` : `forex.html?pair=${cfg.id}`);
+    a.setAttribute('href', state.inverted && !base.includes('inv=1') ? `${base}&inv=1` : base);
   });
   // El enlace "Divisas" del menú también conserva la dirección elegida
   document.querySelectorAll('.nav-link').forEach(a => {
@@ -1016,23 +1019,26 @@ async function init() {
 }
 
 // ---------- Listeners de tema, idioma y pestañas ----------
-els.themeToggle.addEventListener('click', () => {
+els.themeToggle?.addEventListener('click', () => {
   setTheme(state.theme === 'dark' ? 'light' : 'dark');
 });
-els.langEs.addEventListener('click', () => setLang('es'));
-els.langEn.addEventListener('click', () => setLang('en'));
+els.langEs?.addEventListener('click', () => setLang('es'));
+els.langEn?.addEventListener('click', () => setLang('en'));
 
 document.querySelectorAll('.coin-tab').forEach(a => {
   a.classList.toggle('active', a.dataset.pair === pairKey);
 });
 document.querySelectorAll('.nav-link').forEach(a => {
-  a.classList.toggle('active', a.getAttribute('href').startsWith('forex.html'));
+  const isActive = a.classList.toggle('active', a.getAttribute('href').startsWith('forex.html'));
+  if (isActive) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
 });
 const tvBadgeEl = document.getElementById('tvBadge');
 if (tvBadgeEl) tvBadgeEl.textContent = '1 h';
 const pairBadgeEl = document.getElementById('pairBadge');
 if (pairBadgeEl) pairBadgeEl.textContent = viewSlash();
 if (els.invertBtn) els.invertBtn.addEventListener('click', toggleInvert);
+// Pinta la dirección inicial en tabs/nav ANTES de pedir la red, para que los
+// enlaces ya conserven ?inv=1 aunque el usuario navegue de inmediato.
 updateInvertUi();
 
 init();

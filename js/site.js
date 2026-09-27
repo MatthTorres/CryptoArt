@@ -275,6 +275,7 @@ function applyLang() {
     const active = (page === 'home' && href.startsWith('index.html')) ||
                    (page === 'about' && href.startsWith('about.html'));
     a.classList.toggle('active', active);
+    if (active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
   renderHome();
   heroUpdateLabels();

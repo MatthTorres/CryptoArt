@@ -1030,18 +1030,19 @@ async function init() {
 }
 
 // ---------- Listeners de tema e idioma ----------
-els.themeToggle.addEventListener('click', () => {
+els.themeToggle?.addEventListener('click', () => {
   setTheme(state.theme === 'dark' ? 'light' : 'dark');
 });
-els.langEs.addEventListener('click', () => setLang('es'));
-els.langEn.addEventListener('click', () => setLang('en'));
+els.langEs?.addEventListener('click', () => setLang('es'));
+els.langEn?.addEventListener('click', () => setLang('en'));
 
 // ---------- Pestañas de cripto y navegación activa ----------
 document.querySelectorAll('.coin-tab').forEach(a => {
   a.classList.toggle('active', a.dataset.coin === coinKey);
 });
 document.querySelectorAll('.nav-link').forEach(a => {
-  a.classList.toggle('active', a.getAttribute('href').startsWith('analysis.html'));
+  const isActive = a.classList.toggle('active', a.getAttribute('href').startsWith('analysis.html'));
+  if (isActive) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
 });
 const tvBadgeEl = document.getElementById('tvBadge');
 if (tvBadgeEl) tvBadgeEl.textContent = '1 min';
