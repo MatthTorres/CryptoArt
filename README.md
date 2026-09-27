@@ -95,6 +95,10 @@ Detalles según el host:
 - [Alternative.me Fear & Greed Index](https://alternative.me/crypto/fear-and-greed-index/) — miedo/codicia cripto
 - [TradingView](https://www.tradingview.com/) — gráfico en tiempo real
 
+> Estos hosts (y los proxies de Yahoo) también se declaran como `preconnect` /
+> `dns-prefetch` en el `<head>` de las páginas que los usan, para que la conexión
+> esté lista cuando el JS pida datos. Si cambias un proxy, actualiza esas líneas.
+
 **Símbolos de TradingView** (se definen por activo en el JS de cada sección):
 
 | Sección | Símbolos |
