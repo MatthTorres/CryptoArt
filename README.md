@@ -126,6 +126,10 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
   En `analysis.html` y `metals.html` se añadieron `dns-prefetch` a los hosts que
   realmente se piden (Binance, Alternative.me, gold-api). Medido con
   `python tools/perf_all.py`: CoinGecko ≈0,6 s, Binance ≈1 s, Yahoo ≈0,5 s.
+- **Divisas sin botón Reintentar**: si la cascada falla, `js/forex.js` reintenta
+  solo con espera progresiva (3 s, 6 s, 12 s… hasta 30 s). A partir del 5º fallo
+  seguido muestra «Sin conexión… Reintentando en segundo plano» y sigue
+  reintentando cada 30 s hasta que los datos entren (nunca pide clic al usuario).
 - **Home**: los datos de metales y divisas del titular se piden de uno en uno (no 10 en paralelo, que disparaba el rate-limit del proxy) y se cachean 15 min en `localStorage`.
 - **Inversión de pares (divisas)**: el modo `?inv=1` se pinta **antes** de pedir datos y cada pestaña de par lleva su `data-base-href`, de modo que al cambiar de par o de sección se conserva la dirección invertida sin duplicar el parámetro `inv`.
 - **Navegación y accesibilidad**: la sección activa se marca en el HTML con `class="nav-link active"` + `aria-current="page"`, y el JS de cada sección (o `site.js` en home/about) vuelve a sincronizar ambos al cambiar de idioma o de activo.
@@ -134,7 +138,7 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
 - **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.5.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`, y cada HTML lleva el mismo `vX.Y.Z` como respaldo por si el navegador no ejecuta JS.
-- **Cache-bust en uso**: `css/style.css?v=7`, `js/version.js?v=12`, `js/site.js?v=15`, `js/app.js?v=13`, `js/metals.js?v=12`, `js/forex.js?v=13`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
+- **Cache-bust en uso**: `css/style.css?v=7`, `js/version.js?v=12`, `js/site.js?v=15`, `js/app.js?v=13`, `js/metals.js?v=12`, `js/forex.js?v=14`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
 - **Pie de página unificado**: las 6 páginas cierran con las mismas dos líneas (versión con `data-app-version` y copyright con `data-app-year`) y con **dos enlaces que nunca apuntan a la página actual**: `index/analysis/metals/forex` → políticas + *Sobre nosotros*, `about` → políticas + *Inicio*, `legal` → *Inicio* + *Sobre nosotros*. La primera línea de `index/analysis/metals/forex/about` es el sello de datos de mercado (`footerPrefix` + `#updateTime`), que `js/version.js` rellena al cargar y el JS de cada sección sustituye después por la hora real del último dato; `legal.html` no muestra hora y usa la línea de marca (`footerBrandLine`) porque no tiene datos de mercado.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
 - **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.

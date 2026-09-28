@@ -107,7 +107,7 @@ def main():
     print(f"Total de la medición: {cascade_ms} ms en {len(results)} peticion(es)")
     if not first_ok:
         print("Ningún combo funcionó: la página caería al backup de localStorage (24 h) "
-              "o mostraría «Reintentar».")
+              "y reintentaría sola (sin botón, en segundo plano).")
 
 
 if __name__ == "__main__":

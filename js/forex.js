@@ -72,6 +72,7 @@ const I18N = {
     statusLoadingCoin: 'Cargando datos de {coin}…',
     statusOk: 'Análisis actualizado correctamente.',
     statusRetrying: 'Conexión lenta, reintentando automáticamente…',
+    statusOffline: '⚠️ Sin conexión con los datos de mercado. Reintentando en segundo plano…',
     chartUnavailable: 'No se pudo cargar el gráfico de evolución. El resto del análisis sí es válido.',
     tvUnavailable: 'No se pudo cargar el gráfico en tiempo real. Verifica tu conexión.',
     retry: 'Reintentar',
@@ -148,6 +149,7 @@ const I18N = {
     statusLoadingCoin: 'Loading {coin} data…',
     statusOk: 'Analysis updated successfully.',
     statusRetrying: 'Slow connection, retrying automatically…',
+    statusOffline: '⚠️ No connection to market data. Retrying in the background…',
     chartUnavailable: 'The price chart could not be loaded. The rest of the analysis is still valid.',
     tvUnavailable: 'The real-time chart could not be loaded. Check your connection.',
     retry: 'Retry',
@@ -979,18 +981,25 @@ function toggleInvert() {
 
 // Reintento automático: sin botón ni intervención. Si la cascada falla, se espera
 // con espera progresiva (3 s, 6 s, 12 s… hasta 30 s) y se vuelve a intentar;
-// el estado muestra que está reintentando en vez de un error con botón.
+// a partir del 5º fallo seguido se muestra «sin conexión» y los reintentos
+// siguen en segundo plano cada 30 s hasta que los datos entren.
 const RETRY_BASE_MS = 3000;
 const RETRY_MAX_MS = 30000;
+const RETRY_OFFLINE_AFTER = 5;
 let retryTimer = null;
 
 // ---------- Inicialización ----------
 async function init() {
   applyTheme();
   if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
-  state.statusKey = 'statusLoadingCoin';
-  els.statusText.textContent = fillText(t(state.statusKey));
-  els.statusRow.querySelector('.loader').classList.remove('done');
+  const attempt = init._attempt = (init._attempt || 0) + 1;
+  // Solo la primera carga (o un par nuevo) pone el estado "Cargando…": los
+  // reintentos en segundo plano no tapan el mensaje de reintentando/offline.
+  if (attempt === 1) {
+    state.statusKey = 'statusLoadingCoin';
+    els.statusText.textContent = fillText(t(state.statusKey));
+    els.statusRow.querySelector('.loader').classList.remove('done');
+  }
   try {
     const [history, spot] = await Promise.all([
       loadHistoricalPrices(),
@@ -1016,15 +1025,22 @@ async function init() {
 
     renderChart(cached.prices, cached.dates);
     renderTradingView();
-    init._retryN = 0;
+    init._attempt = 0;
   } catch (err) {
     console.error(err);
-    // Sin botón: se reintenta solo con espera progresiva. El usuario no toca nada.
-    state.statusKey = 'statusRetrying';
-    els.statusRow.querySelector('.loader').classList.remove('done');
-    els.statusText.textContent = t(state.statusKey);
-    const attempt = (init._retryN = (init._retryN || 0) + 1);
+    // Sin botón: reintento automático. Hasta el 5º fallo seguido se muestra
+    // "reintentando…"; a partir de ahí "sin conexión" y el reintento sigue en
+    // segundo plano (cada 30 s) hasta que los datos entren.
     const wait = Math.min(RETRY_BASE_MS * Math.pow(2, attempt - 1), RETRY_MAX_MS);
+    if (attempt < RETRY_OFFLINE_AFTER) {
+      state.statusKey = 'statusRetrying';
+      els.statusRow.querySelector('.loader').classList.remove('done');
+      els.statusText.textContent = t(state.statusKey);
+    } else {
+      state.statusKey = 'statusOffline';
+      els.statusRow.querySelector('.loader').classList.add('done');
+      els.statusText.textContent = t(state.statusKey);
+    }
     retryTimer = setTimeout(() => { retryTimer = null; init(); }, wait);
   }
 
