@@ -11,7 +11,7 @@ Plataforma web de **análisis diario multi-activo (cripto, metales y divisas)** 
 - **Análisis técnico**: RSI(14), medias móviles SMA20/SMA50 y MACD calculados en el navegador sobre 90 días de historial.
 - **Probabilidades** de subida y bajada para cada análisis + probabilidad combinada ponderada.
 - **Rango estimado del día**: escenarios alcista/bajista, horquilla de precio y precio esperado al cierre.
-- **Plan operativo en el resumen**: rango de entrada, stop loss (1,5σ), salida objetivo y ratio beneficio/riesgo para posición larga y corta, derivados de la volatilidad y el movimiento medio diario.
+- **Plan operativo de hoy en el resumen**: con precio de entrada, stop loss y precio de salida concretos, en **3 perfiles de riesgo** (🛡️ conservador, ⚖️ medio y 🔥 arriesgado) alineados con la recomendación del día (larga o corta).
 - **Gráficos**: evolución diaria de90 días con medias móviles (Chart.js) + gráfico en tiempo real de1 min (TradingView).
 - **Home** con resumen general del mercado, titular rotatorio (cripto → metales → divisas, cada 30 s de inactividad: cualquier interacción del usuario lo pospone) y botones a cada activo. El resumen y las estadísticas **acompañan al titular**: cambian entre datos de cripto, metales o divisas según el título visible.
 - **Sobre nosotros** con metodología y aviso de riesgo.
@@ -139,7 +139,7 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
 - **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.5.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`, y cada HTML lleva el mismo `vX.Y.Z` como respaldo por si el navegador no ejecuta JS.
-- **Cache-bust en uso**: `css/style.css?v=8`, `js/version.js?v=12`, `js/site.js?v=15`, `js/app.js?v=14`, `js/metals.js?v=13`, `js/forex.js?v=15`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
+- **Cache-bust en uso**: `css/style.css?v=9`, `js/version.js?v=12`, `js/site.js?v=15`, `js/app.js?v=15`, `js/metals.js?v=14`, `js/forex.js?v=16`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
 - **Pie de página unificado**: las 6 páginas cierran con las mismas dos líneas (versión con `data-app-version` y copyright con `data-app-year`) y con **dos enlaces que nunca apuntan a la página actual**: `index/analysis/metals/forex` → políticas + *Sobre nosotros*, `about` → políticas + *Inicio*, `legal` → *Inicio* + *Sobre nosotros*. La primera línea de `index/analysis/metals/forex/about` es el sello de datos de mercado (`footerPrefix` + `#updateTime`), que `js/version.js` rellena al cargar y el JS de cada sección sustituye después por la hora real del último dato; `legal.html` no muestra hora y usa la línea de marca (`footerBrandLine`) porque no tiene datos de mercado.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
 - **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.

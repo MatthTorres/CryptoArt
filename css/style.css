@@ -713,6 +713,7 @@ h1, h2 { font-family: 'Sora', sans-serif; }
   gap: 6px;
 }
 .trade-side-title.up { color: var(--up); }
+.trade-side-title.neutral { color: var(--neutral); }
 .trade-side-title.down { color: var(--down); }
 .trade-grid .range-metrics { margin-bottom: 0; }
 

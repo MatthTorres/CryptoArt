@@ -32,7 +32,7 @@
 <link rel="dns-prefetch" href="https://api.cors.lol">
 <link rel="dns-prefetch" href="https://s3.tradingview.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=9">
 </head>
 <body data-page="forex">
   <div class="bg-glow"></div>
@@ -181,18 +181,22 @@
       </div>
 
       <div class="range-block">
-        <h3><span data-i18n="tradeTitle">Plan operativo — entrada, stop y salida</span></h3>
+        <h3><span data-i18n="tradeTitle">Plan operativo de hoy</span> <span class="range-date" id="tradeDir">—</span></h3>
         <div class="trade-grid">
           <div class="trade-side">
-            <div class="trade-side-title up">▲ <span data-i18n="tradeLong">Posición larga (compra)</span></div>
-            <div class="range-metrics" id="tradeLong"></div>
+            <div class="trade-side-title up" data-i18n="profileCons">🛡️ Conservador</div>
+            <div class="range-metrics" id="tradeCons"></div>
           </div>
           <div class="trade-side">
-            <div class="trade-side-title down">▼ <span data-i18n="tradeShort">Posición corta (venta)</span></div>
-            <div class="range-metrics" id="tradeShort"></div>
+            <div class="trade-side-title neutral" data-i18n="profileMed">⚖️ Medio</div>
+            <div class="range-metrics" id="tradeMed"></div>
+          </div>
+          <div class="trade-side">
+            <div class="trade-side-title down" data-i18n="profileAgg">🔥 Arriesgado</div>
+            <div class="range-metrics" id="tradeAgg"></div>
           </div>
         </div>
-        <p class="range-note" data-i18n="tradeNote">Niveles estadísticos calculados con la volatilidad (σ) y el movimiento medio diario del activo: la entrada espera un retroceso de media jornada, el stop se coloca 1,5σ más allá de la entrada y la salida apunta al extremo estimado del día. Solo información; no es asesoría financiera.</p>
+        <p class="range-note" data-i18n="tradeNote">Tres perfiles para la operación de hoy según tu tolerancia al riesgo. Conservador: espera un retroceso, stop estrecho para arriesgar poco por operación y salida temprana. Medio: retroceso leve, stop estándar y salida en el extremo estimado del día. Arriesgado: entrada a mercado, stop amplio que aguanta el ruido y salida en extensión. Niveles estadísticos; no es asesoría financiera.</p>
       </div>
 
       <p class="disclaimer" data-i18n="disclaimer">
@@ -219,7 +223,7 @@
   </footer>
 
   <script defer src="js/version.js?v=12"></script>
-  <script defer src="js/forex.js?v=15"></script>
+  <script defer src="js/forex.js?v=16"></script>
 </body>
 </html>
 

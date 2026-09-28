@@ -41,7 +41,7 @@ def main():
                 subprocess.run(args, stdout=fh, stderr=subprocess.DEVNULL, timeout=120)
             html = open(out, encoding="utf-8").read()
             print(f"=== {page}")
-            for box in ("tradeLong", "tradeShort"):
+            for box in ("tradeCons", "tradeMed", "tradeAgg"):
                 m = re.search(
                     rf'id="{box}"[^>]*>(.*?)</div>\s*</div>', html, re.S)
                 if not m:
