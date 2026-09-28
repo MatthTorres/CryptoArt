@@ -410,16 +410,29 @@ function macd(values) {
 }
 
 // ---------- Fetch con reintento y proxy ----------
+// Tope de 8 s por petición: sin AbortController, un proxy que cuelga la conexión
+// dejaba la página en "Cargando..." hasta el timeout del navegador (minutos).
+// Cada combo de la cascada puede costar como máximo FETCH_TIMEOUT_MS.
+const FETCH_TIMEOUT_MS = 8000;
+async function fetchWithTimeout(url) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 async function fetchRetry(url, tries = 3) {
   let lastErr = null;
   for (let i = 0; i < tries; i++) {
     const isLast = i === tries - 1;
     try {
-      const res = await fetch(url);
+      const res = await fetchWithTimeout(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {
-      lastErr = e;
+      lastErr = e && e.name === 'AbortError' ? new Error('timeout 8s') : e;
       if (isLast) break;
       await new Promise(r => setTimeout(r, 1500 * (i + 1)));
     }

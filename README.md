@@ -116,6 +116,15 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 - **Cascada de proxies**: Yahoo bloquea CORS, así que se prueban 2 hosts (`query1`/`query2`) × 2 proxies con CORS (`api.allorigins.win`, `api.cors.lol`), **con un solo intento por combinación y sin pausas artificiales**: se avanza al siguiente en cuanto falla. Proxies retirados por estar caídos: `corsproxy.io` (401) y `codetabs.com` (503).
 - **Gráfico en vivo diferido**: el widget de TradingView es el recurso más pesado y está bajo el pliegue, así que se crea al entrar en pantalla con `IntersectionObserver` (red de seguridad a los 4 s) en vez de bloquear la carga inicial.
 - **Scripts con `defer`** para que Chart.js (201 KB) no bloquee el pintado inicial.
+- **Chart.js solo cuando se usa**: las páginas de análisis lo cargan de forma perezosa
+  (`ensureChartJs()`, en `js/app.js`, `js/metals.js` y `js/forex.js`) y nunca como
+  `<script>` estático en el HTML, así los datos del análisis no esperan a los 201 KB
+  del CDN. Si el CDN falla, el gráfico muestra su aviso sin tumbar el análisis.
+- **Tope por petición en divisas**: `js/forex.js` aborta cualquier petición que tarde
+  más de 8 s (`AbortController`), de modo que el peor caso frío es la suma de los
+  combos (4 × 8 s) en vez de un «Cargando…» indefinido. Medido con
+  `python tools/time_forex.py`: ruta fría ≈1,8 s (primer combo) y análisis en
+  pantalla en ≈0,2 s más con la caché de sesión.
 - **Home**: los datos de metales y divisas del titular se piden de uno en uno (no 10 en paralelo, que disparaba el rate-limit del proxy) y se cachean 15 min en `localStorage`.
 - **Inversión de pares (divisas)**: el modo `?inv=1` se pinta **antes** de pedir datos y cada pestaña de par lleva su `data-base-href`, de modo que al cambiar de par o de sección se conserva la dirección invertida sin duplicar el parámetro `inv`.
 - **Navegación y accesibilidad**: la sección activa se marca en el HTML con `class="nav-link active"` + `aria-current="page"`, y el JS de cada sección (o `site.js` en home/about) vuelve a sincronizar ambos al cambiar de idioma o de activo.
@@ -124,7 +133,7 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
 - **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.5.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`, y cada HTML lleva el mismo `vX.Y.Z` como respaldo por si el navegador no ejecuta JS.
-- **Cache-bust en uso**: `css/style.css?v=7`, `js/version.js?v=12`, `js/site.js?v=15`, `js/app.js?v=12`, `js/metals.js?v=11`, `js/forex.js?v=11`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
+- **Cache-bust en uso**: `css/style.css?v=7`, `js/version.js?v=12`, `js/site.js?v=15`, `js/app.js?v=12`, `js/metals.js?v=11`, `js/forex.js?v=12`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
 - **Pie de página unificado**: las 6 páginas cierran con las mismas dos líneas (versión con `data-app-version` y copyright con `data-app-year`) y con **dos enlaces que nunca apuntan a la página actual**: `index/analysis/metals/forex` → políticas + *Sobre nosotros*, `about` → políticas + *Inicio*, `legal` → *Inicio* + *Sobre nosotros*. La primera línea de `index/analysis/metals/forex/about` es el sello de datos de mercado (`footerPrefix` + `#updateTime`), que `js/version.js` rellena al cargar y el JS de cada sección sustituye después por la hora real del último dato; `legal.html` no muestra hora y usa la línea de marca (`footerBrandLine`) porque no tiene datos de mercado.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
 - **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.
