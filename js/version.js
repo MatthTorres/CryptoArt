@@ -5,10 +5,10 @@
 // Al publicar una versión nueva, cambia solo APP_VERSION aquí.
 // ==========================================================
 
-const APP_VERSION = '3.5.0'; // Home instantáneo: esqueletos + caché local 15min/24h + refresco en segundo plano
+const APP_VERSION = '3.5.1'; // Metales y divisas: los proxies de Yahoo compiten en carrera (antes cascada en serie) y el timeout de 8s siembra tambien en la ruta con gate
 const APP_RELEASE = {
-  es: '25 de septiembre de 2026',
-  en: 'September 25, 2026',
+  es: '28 de septiembre de 2026',
+  en: 'September 28, 2026',
 };
 
 function appLang() {

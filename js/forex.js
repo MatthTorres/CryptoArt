@@ -20,8 +20,9 @@ const pair = PAIRS[pairKey];
 // Inversión de cotización: ?inv=1 muestra el par al revés (EUR/USD -> USD/EUR).
 const invertedFromUrl = new URLSearchParams(location.search).get('inv') === '1';
 
-// Yahoo bloquea CORS: se piden los datos a traves de proxies gratuitos, probando
-// en cascada (2 hosts x 2 proxies vivos) y avanzando en cuanto uno falla.
+// Yahoo bloquea CORS: se piden los datos a traves de proxies gratuitos. Los 4
+// combos (2 hosts x 2 proxies) salen a la vez en carrera y gana el primero que
+// responde: ver fetchYahooChart.
 const PROXIES = [
   'https://api.allorigins.win/raw?url=',
   'https://api.cors.lol/?url=',
@@ -442,11 +443,18 @@ function macd(values) {
 // dejaba la página en "Cargando..." hasta el timeout del navegador (minutos).
 // Cada combo de la cascada puede costar como máximo FETCH_TIMEOUT_MS.
 const FETCH_TIMEOUT_MS = 8000;
-async function fetchWithTimeout(url) {
+async function fetchWithTimeout(url, options, timeoutMs = FETCH_TIMEOUT_MS) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  // Signal del llamante (para cancelar el resto de la carrera) encadenada con la
+  // del timeout propio: si una cancela, la peticion se aborta igual.
+  const outer = options && options.signal;
+  if (outer) {
+    if (outer.aborted) ctrl.abort();
+    else outer.addEventListener('abort', () => ctrl.abort(), { once: true });
+  }
   try {
-    return await fetch(url, { signal: ctrl.signal });
+    return await fetch(url, { ...(options || {}), signal: ctrl.signal });
   } finally {
     clearTimeout(timer);
   }
@@ -468,21 +476,39 @@ async function fetchRetry(url, tries = 3) {
   throw lastErr || new Error('fetch failed');
 }
 
-// ---------- Datos: Yahoo Finance vía cascada de proxies ----------
+// ---------- Datos: Yahoo Finance en carrera de proxies ----------
+// En cada ronda sale UNA peticion por proxy (los gratuitos limitan por IP: 4 a
+// la vez responden 429) y gana la primera que traiga datos validos. Si ninguna
+// ruta responde, se prueba con el otro host de Yahoo.
+// Antes era en serie: con un proxy colgado, cada combo costaba 8 s y el peor
+// caso sumaba 32 s antes de rendirse.
+const RACE_TIMEOUT_MS = 7000;
 async function fetchYahooChart(yahooSymbol) {
   const path = `/v8/finance/chart/${yahooSymbol}?interval=1d&range=3mo`;
+  const group = new AbortController();
+  const attempt = (proxy, host) => fetchWithTimeout(
+    proxy + encodeURIComponent(host + path), { signal: group.signal }, RACE_TIMEOUT_MS,
+  ).then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }).then(data => {
+    if (!data || !data.chart || !data.chart.result || !data.chart.result[0]) {
+      throw new Error('yahoo empty');
+    }
+    return data;
+  });
   let lastErr = null;
   for (const host of YAHOO_HOSTS) {
-    for (const proxy of PROXIES) {
-      try {
-        // 1 intento por combo: si falla, al siguiente sin esperar.
-        const data = await fetchRetry(proxy + encodeURIComponent(host + path), 1);
-        if (data && data.chart && data.chart.result && data.chart.result[0]) return data;
-        lastErr = new Error('yahoo empty');
-      } catch (e) { lastErr = e; }
+    try {
+      const data = await Promise.any(PROXIES.map(proxy => attempt(proxy, host)));
+      group.abort();            // la ruta perdedora deja de gastar cuota
+      return data;
+    } catch (agg) {
+      lastErr = (agg && agg.errors && agg.errors[0]) || agg;
     }
   }
-  throw lastErr || new Error('yahoo failed');
+  group.abort();
+  throw (lastErr instanceof Error ? lastErr : new Error('yahoo failed'));
 }
 
 // 15 min en cache de sesion + copia en localStorage: al cambiar de par o volver

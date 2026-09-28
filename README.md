@@ -137,7 +137,7 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 
 - **Cripto (`js/app.js`)**: historial, datos de mercado y sentimiento se piden **en paralelo** con un único `Promise.all` (antes iban en serie, y la página tardaba la suma de las tres). La pausa del gate anti-429 baja de 2 s a 400 ms, los reintentos de CoinGecko son cortos (3 en vez de 6, con `Retry-After` acotado a 2,5 s) porque hay respaldo a Binance, y la caché también dura 15 min.
 - **Caché en dos niveles**: el historial de cada activo/par se guarda 15 min en `sessionStorage` y una copia de 24 h en `localStorage` (clave `backup_*`). Al saltar entre pestañas o volver atrás no se vuelve a pedir nada por la red; y si los proxies fallan se muestra el último historial guardado en lugar de una página de error.
-- **Cascada de proxies**: Yahoo bloquea CORS, así que se prueban 2 hosts (`query1`/`query2`) × 2 proxies con CORS (`api.allorigins.win`, `api.cors.lol`), **con un solo intento por combinación y sin pausas artificiales**: se avanza al siguiente en cuanto falla. Proxies retirados por estar caídos: `corsproxy.io` (401) y `codetabs.com` (503).
+- **Carrera de proxies**: Yahoo bloquea CORS, así que `fetchYahooChart` pone 2 hosts (`query1`/`query2`) × 2 proxies con CORS (`api.allorigins.win`, `api.cors.lol`) a **competir en paralelo**: cada ronda lanza **una petición por proxy** (más de una a la vez contra el mismo gratuito responde `429`) y gana la primera que traiga datos válidos, cancelando la perdedora. Si ninguna de la ronda responde, se prueba con el otro host. Tope 7 s por petición. Coste peor caso: `2 × 7 s`, frente a los ~32 s que sumaba la cascada en serie. Antes la cascada era en serie host→proxy y `gatedFetch` no aplicaba `AbortController`, así que un proxy colgado (típico con `PL=F`, Platino) se tragaba el timeout entero antes de probar el que sí respondía: el platino tardaba ~9 s. Proxies retirados por estar caídos: `corsproxy.io` (401) y `codetabs.com` (503).
 - **Gráfico en vivo diferido**: el widget de TradingView es el recurso más pesado y está bajo el pliegue, así que se crea al entrar en pantalla con `IntersectionObserver` (red de seguridad a los 4 s) en vez de bloquear la carga inicial.
 - **Scripts con `defer`** para que Chart.js (201 KB) no bloquee el pintado inicial.
 - **Chart.js solo cuando se usa**: las páginas de análisis lo cargan de forma perezosa
@@ -150,7 +150,7 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
   En `analysis.html` y `metals.html` se añadieron `dns-prefetch` a los hosts que
   realmente se piden (Binance, Alternative.me, gold-api). Medido con
   `python tools/perf_all.py`: CoinGecko ≈0,6 s, Binance ≈1 s, Yahoo ≈0,5 s.
-- **Divisas sin botón Reintentar**: si la cascada falla, `js/forex.js` reintenta
+- **Divisas sin botón Reintentar**: si la carrera de proxies falla, `js/forex.js` reintenta
   solo con espera progresiva (3 s, 6 s, 12 s… hasta 30 s). A partir del 5º fallo
   seguido muestra «Sin conexión… Reintentando en segundo plano» y sigue
   reintentando cada 30 s hasta que los datos entren (nunca pide clic al usuario).
@@ -161,8 +161,8 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 ## 🧾 Políticas de uso y versión
 
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
-- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.5.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`, y cada HTML lleva el mismo `vX.Y.Z` como respaldo por si el navegador no ejecuta JS.
-- **Cache-bust en uso**: `css/style.css?v=9`, `js/version.js?v=12`, `js/site.js?v=15`, `js/app.js?v=15`, `js/metals.js?v=14`, `js/forex.js?v=16`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
+- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.5.1**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`, y cada HTML lleva el mismo `vX.Y.Z` como respaldo por si el navegador no ejecuta JS.
+- **Cache-bust en uso**: `css/style.css?v=9`, `js/version.js?v=13`, `js/site.js?v=15`, `js/app.js?v=15`, `js/metals.js?v=15`, `js/forex.js?v=17`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
 - **Pie de página unificado**: las 6 páginas cierran con las mismas dos líneas (versión con `data-app-version` y copyright con `data-app-year`) y con **dos enlaces que nunca apuntan a la página actual**: `index/analysis/metals/forex` → políticas + *Sobre nosotros*, `about` → políticas + *Inicio*, `legal` → *Inicio* + *Sobre nosotros*. La primera línea de `index/analysis/metals/forex/about` es el sello de datos de mercado (`footerPrefix` + `#updateTime`), que `js/version.js` rellena al cargar y el JS de cada sección sustituye después por la hora real del último dato; `legal.html` no muestra hora y usa la línea de marca (`footerBrandLine`) porque no tiene datos de mercado.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
 - **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.
