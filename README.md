@@ -58,6 +58,29 @@ Es una web **100% estática** (sin backend). Opciones gratuitas:
 - **GitHub Pages**: subir a un repo → Settings → Pages → rama `main`
 - **Vercel / Cloudflare Pages**: CLI o integración con GitHub
 
+### Sincronización con el repositorio (regla del proyecto)
+
+GitHub Pages **solo publica lo que está subido**: un commit local no se ve en
+`https://matthtorres.github.io/CryptoArt/` hasta que se hace `git push`. Para que
+la web publicada nunca quede desactualizada, **cada tanda de cambios se commitea
+y se sube de inmediato**:
+
+```bash
+git add -A
+git commit -m "Resumen del cambio"
+git push origin main          # GitHub Pages despliega en ~1 minuto
+```
+
+Comprobación rápida de que local y publicado coinciden:
+
+```bash
+git status -sb                # debe terminar en "## main...origin/main" sin "ahead"
+```
+
+Si aparece `ahead N`, hay N commits que **solo existen en el ordenador** y que
+todavía no se ven en la web. Tras el push, recargar con **Ctrl+Shift+R** porque
+el navegador puede conservar el HTML, el CSS o el JS antiguos.
+
 ### Dominio y SEO (paso a paso)
 
 Hasta que haya hosting, las URLs absolutas (canonical, `og:url`, `og:image`,
