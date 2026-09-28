@@ -360,6 +360,9 @@ function macd(values) {
 //  - Reintentos cortos: si CoinGecko falla se cae rápido a Binance en vez de
 //    esperar decenas de segundos (el respaldo no tiene rate-limit agresivo).
 //  - Fallback Binance (sin API key) para historial y precio spot.
+//  - Tope 8 s por petición: el AbortController de fetchJSON evita que un
+//    proveedor colgado deje la página en "Cargando..." (timeout del navegador).
+const FETCH_TIMEOUT_MS = 8000;
 let fetchGate = Promise.resolve();
 function gatedFetch(url, options) {
   const run = fetchGate.then(async () => {
@@ -376,10 +379,15 @@ const BINANCE_SYMBOL = {
 async function fetchJSON(url, tries = 3, baseDelay = 1200, useGate = true) {
   let lastErr = null;
   for (let i = 0; i < tries; i++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
     try {
+      // El gate solo ordena las peticiones CoinGecko; el AbortController pone el
+      // tope de 8 s para no quedarse en "Cargando..." si un proveedor se cuelga.
       const doFetch = useGate && url.includes('coingecko.com')
-        ? gatedFetch(url)
-        : fetch(url);
+        ? fetchGate.then(() => fetch(url, { signal: ctrl.signal })).finally(() => new Promise(r => setTimeout(r, 400)))
+        : fetch(url, { signal: ctrl.signal });
+      if (useGate && url.includes('coingecko.com')) fetchGate = doFetch.catch(() => {});
       const res = await doFetch;
       if (res.status === 429) {
         lastErr = new Error('HTTP 429');
@@ -393,9 +401,12 @@ async function fetchJSON(url, tries = 3, baseDelay = 1200, useGate = true) {
         continue;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
+      const out = await res.json();
+      clearTimeout(timer);
+      return out;
     } catch (e) {
-      lastErr = e;
+      clearTimeout(timer);
+      lastErr = e && e.name === 'AbortError' ? new Error('timeout 8s') : e;
       if (i === tries - 1) break;
       await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i) + Math.random() * 800));
     }
@@ -457,8 +468,6 @@ function getBackup(key) {
     const { ts, data } = JSON.parse(raw);
     if (Date.now() - ts > CACHE_BACKUP_TTL) return null;
     return reviveHistory(data);
-  } catch { return null; }
-}
   } catch { return null; }
 }
 function setBackup(key, data) {

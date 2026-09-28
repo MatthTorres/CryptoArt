@@ -427,7 +427,9 @@ async function fetchSegmentChart(yahooSymbol) {
   for (const host of SEGMENT_HOSTS) {
     for (const proxy of SEGMENT_PROXIES) {
       try {
-        const data = await fetchRetry(proxy + encodeURIComponent(host + path), 1);
+        // Tope 8 s: sin AbortController, un proxy colgado dejaba el titular
+        // rotatorio sin datos de metales/divisas hasta el timeout del navegador.
+        const data = await fetchRetry(proxy + encodeURIComponent(host + path), 1, 8000);
         if (data && data.chart && data.chart.result && data.chart.result[0]) return data;
         lastErr = new Error('yahoo empty');
       } catch (e) { lastErr = e; }
@@ -539,10 +541,10 @@ function fetchWithTimeout(url, ms = 8000) {
   const timer = setTimeout(() => ctrl.abort(), ms);
   return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
 }
-async function fetchRetry(url, tries = 3) {
+async function fetchRetry(url, tries = 3, ms = 8000) {
   for (let i = 0; i < tries; i++) {
     try {
-      const res = await fetchWithTimeout(url, 8000);
+      const res = await fetchWithTimeout(url, ms);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {

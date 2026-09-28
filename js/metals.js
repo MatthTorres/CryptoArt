@@ -347,6 +347,15 @@ function macd(values) {
 // Yahoo bloquea CORS y los proxies gratuitos fallan o se limitan, asi que se
 // prueban en cascada (2 hosts de Yahoo x 2 proxies vivos) SIN pausas artificiales:
 // se avanza al siguiente combo en cuanto falla, para no encadenar segundos de espera.
+// Tope 8 s por petición: sin AbortController, un proxy colgado dejaba la página
+// en "Cargando..." hasta el timeout del navegador (minutos).
+const FETCH_TIMEOUT_MS = 8000;
+function fetchWithTimeout(url, options) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  return fetch(url, { ...(options || {}), signal: ctrl.signal })
+    .finally(() => clearTimeout(timer));
+}
 const PROXIES = [
   'https://api.allorigins.win/raw?url=',
   'https://api.cors.lol/?url=',
@@ -357,7 +366,7 @@ async function fetchRetry(url, tries = 4, baseDelay = 1500, useGate = false) {
   for (let i = 0; i < tries; i++) {
     const isLast = i === tries - 1;
     try {
-      const res = useGate ? await gatedFetch(url) : await fetch(url);
+      const res = useGate ? await gatedFetch(url) : await fetchWithTimeout(url);
       if (res.status === 429) {
         lastErr = new Error('HTTP 429');
         if (isLast) break;                       // sin esperas inútiles en el último intento
@@ -367,7 +376,7 @@ async function fetchRetry(url, tries = 4, baseDelay = 1500, useGate = false) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {
-      lastErr = e;
+      lastErr = e && e.name === 'AbortError' ? new Error('timeout 8s') : e;
       if (isLast) break;
       await new Promise(r => setTimeout(r, baseDelay * (i + 1) + Math.random() * 800));
     }
@@ -921,9 +930,14 @@ async function init() {
   els.statusRow.querySelector('.loader').classList.remove('done');
   els.statusRow.querySelectorAll('.retry-btn').forEach(b => b.remove());
   try {
-    const history = await loadHistoricalPrices();
-    let spot = null;
-    try { spot = await loadSpotPrice(); } catch { spot = null; }
+    // Historial y spot son independientes: se piden a la vez. Antes iban en
+    // serie (spot esperaba al historial Yahoo), así que la página tardaba la
+    // suma de ambas en vez de la más lenta.
+    const [history, spotRes] = await Promise.all([
+      loadHistoricalPrices(),
+      loadSpotPrice().then(v => ({ ok: v })).catch(() => ({ ok: null })),
+    ]);
+    const spot = spotRes.ok;
     cached.prices = history.prices;
     cached.dates = history.dates;
     cached.spotPrice = spot;
