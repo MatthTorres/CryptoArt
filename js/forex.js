@@ -71,7 +71,7 @@ const I18N = {
     statusLoading: 'Cargando datos del mercado en tiempo real…',
     statusLoadingCoin: 'Cargando datos de {coin}…',
     statusOk: 'Análisis actualizado correctamente.',
-    statusError: '⚠️ No se pudieron cargar los datos (posible límite de la API o falta de conexión). Pulsa Reintentar en unos segundos.',
+    statusRetrying: 'Conexión lenta, reintentando automáticamente…',
     chartUnavailable: 'No se pudo cargar el gráfico de evolución. El resto del análisis sí es válido.',
     tvUnavailable: 'No se pudo cargar el gráfico en tiempo real. Verifica tu conexión.',
     retry: 'Reintentar',
@@ -147,7 +147,7 @@ const I18N = {
     statusLoading: 'Loading live market data…',
     statusLoadingCoin: 'Loading {coin} data…',
     statusOk: 'Analysis updated successfully.',
-    statusError: '⚠️ Could not load data (possible API rate limit or no connection). Press Retry in a few seconds.',
+    statusRetrying: 'Slow connection, retrying automatically…',
     chartUnavailable: 'The price chart could not be loaded. The rest of the analysis is still valid.',
     tvUnavailable: 'The real-time chart could not be loaded. Check your connection.',
     retry: 'Retry',
@@ -496,17 +496,6 @@ function getBackup(key) {
 }
 function setBackup(key, data) {
   try { localStorage.setItem('backup_' + key, JSON.stringify({ ts: Date.now(), data })); } catch { /* cuota */ }
-}
-
-function showRetry(container, onClick) {
-  if (!container) return;
-  container.querySelectorAll('.retry-btn').forEach(b => b.remove());
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'retry-btn';
-  btn.textContent = t('retry');
-  btn.addEventListener('click', () => { btn.remove(); onClick(); });
-  container.appendChild(btn);
 }
 
 // ---------- Datos: Yahoo Finance vía cascada de proxies ----------
@@ -988,13 +977,20 @@ function toggleInvert() {
   }
 }
 
+// Reintento automático: sin botón ni intervención. Si la cascada falla, se espera
+// con espera progresiva (3 s, 6 s, 12 s… hasta 30 s) y se vuelve a intentar;
+// el estado muestra que está reintentando en vez de un error con botón.
+const RETRY_BASE_MS = 3000;
+const RETRY_MAX_MS = 30000;
+let retryTimer = null;
+
 // ---------- Inicialización ----------
 async function init() {
   applyTheme();
+  if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
   state.statusKey = 'statusLoadingCoin';
   els.statusText.textContent = fillText(t(state.statusKey));
   els.statusRow.querySelector('.loader').classList.remove('done');
-  els.statusRow.querySelectorAll('.retry-btn').forEach(b => b.remove());
   try {
     const [history, spot] = await Promise.all([
       loadHistoricalPrices(),
@@ -1020,12 +1016,16 @@ async function init() {
 
     renderChart(cached.prices, cached.dates);
     renderTradingView();
+    init._retryN = 0;
   } catch (err) {
     console.error(err);
-    state.statusKey = 'statusError';
-    els.statusRow.querySelector('.loader').classList.add('done');
+    // Sin botón: se reintenta solo con espera progresiva. El usuario no toca nada.
+    state.statusKey = 'statusRetrying';
+    els.statusRow.querySelector('.loader').classList.remove('done');
     els.statusText.textContent = t(state.statusKey);
-    showRetry(els.statusRow, () => init());
+    const attempt = (init._retryN = (init._retryN || 0) + 1);
+    const wait = Math.min(RETRY_BASE_MS * Math.pow(2, attempt - 1), RETRY_MAX_MS);
+    retryTimer = setTimeout(() => { retryTimer = null; init(); }, wait);
   }
 
   applyLang();
