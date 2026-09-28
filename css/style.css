@@ -696,6 +696,26 @@ h1, h2 { font-family: 'Sora', sans-serif; }
   line-height: 1.5;
 }
 
+/* ---------- Niveles de entrada/salida del resumen ---------- */
+.trade-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.trade-side-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.trade-side-title.up { color: var(--up); }
+.trade-side-title.down { color: var(--down); }
+.trade-grid .range-metrics { margin-bottom: 0; }
+
 .live-status {
   display: flex;
   align-items: center;

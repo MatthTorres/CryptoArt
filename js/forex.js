@@ -54,6 +54,8 @@ const els = {
   summaryText: document.getElementById('summaryText'),
   rangeMetrics: document.getElementById('rangeMetrics'),
   rangeDate: document.getElementById('rangeDate'),
+  tradeLong: document.getElementById('tradeLong'),
+  tradeShort: document.getElementById('tradeShort'),
   recoDetails: document.getElementById('recoDetails'),
   updateTime: document.getElementById('updateTime'),
   pairBanner: document.getElementById('pairBanner'),
@@ -138,6 +140,14 @@ const I18N = {
     rangePrice: 'Horquilla de precio esperada hoy',
     rangeClose: 'Variación esperada al cierre de hoy',
     rangeClosePrice: 'Precio esperado al cierre de hoy',
+    tradeTitle: 'Plan operativo — entrada, stop y salida',
+    tradeLong: 'Posición larga (compra)',
+    tradeShort: 'Posición corta (venta)',
+    tradeEntry: 'Rango de entrada',
+    tradeStop: 'Stop loss',
+    tradeTarget: 'Salida objetivo',
+    tradeRR: 'Ratio beneficio / riesgo',
+    tradeNote: 'Niveles estadísticos calculados con la volatilidad (σ) y el movimiento medio diario del activo: la entrada espera un retroceso de media jornada, el stop se coloca 1,5σ más allá de la entrada y la salida apunta al extremo estimado del día. Solo información; no es asesoría financiera.',
   },
   en: {
     docTitle: 'MarketPulse — {coin} Analysis',
@@ -215,6 +225,14 @@ const I18N = {
     rangePrice: 'Expected price range today',
     rangeClose: 'Expected change at today\'s close',
     rangeClosePrice: 'Expected price at today\'s close',
+    tradeTitle: 'Trade plan — entry, stop and exit',
+    tradeLong: 'Long position (buy)',
+    tradeShort: 'Short position (sell)',
+    tradeEntry: 'Entry range',
+    tradeStop: 'Stop loss',
+    tradeTarget: 'Target exit',
+    tradeRR: 'Reward / risk ratio',
+    tradeNote: 'Statistical levels computed from the asset’s volatility (σ) and average daily move: the entry waits for a half-day pullback, the stop sits 1.5σ beyond the entry and the exit aims at the estimated extreme of the day. Informational only; not financial advice.',
   },
 };
 
@@ -862,6 +880,39 @@ function renderRangeBlock(upProb, downProb) {
   addMetricRow(els.rangeMetrics, t('rangePrice'), `${fmtPairPrice(low)} – ${fmtPairPrice(high)}`, 'neutral');
   addMetricRow(els.rangeMetrics, t('rangeClose'), fmtPct(closePct, 2), closePct >= 0 ? 'up' : 'down');
   addMetricRow(els.rangeMetrics, t('rangeClosePrice'), fmtPairPrice(closePrice), closePct >= 0 ? 'up' : 'down');
+
+  renderTradeLevels(price, sigma, meanAbs, high, low);
+}
+
+// Plan operativo: niveles de entrada, stop loss y salida para las dos direcciones.
+//  - Entrada: zona entre un retroceso de media jornada (0,5 × movimiento medio
+//    diario) y el precio actual (larga) o su espejo (corta).
+//  - Stop: 1,5σ por debajo/encima del extremo de la zona de entrada.
+//  - Salida: extremo estimado del día (alto para larga, bajo para corta).
+//  - Ratio beneficio/riesgo medido desde el centro de la entrada.
+function renderTradeLevels(price, sigma, meanAbs, high, low) {
+  if (!els.tradeLong || !els.tradeShort) return;
+  if (!(price > 0) || !(sigma > 0) || !(meanAbs > 0)) return;
+  const pctFrom = v => ((v - price) / price) * 100;
+
+  const fill = (box, entryLo, entryHi, stop, target) => {
+    const mid = (entryLo + entryHi) / 2;
+    const reward = Math.abs(target - mid);
+    const risk = Math.abs(mid - stop);
+    const rr = risk > 0 ? reward / risk : 0;
+    box.innerHTML = '';
+    addMetricRow(box, t('tradeEntry'), `${fmtPairPrice(entryLo)} – ${fmtPairPrice(entryHi)}`, 'neutral');
+    addMetricRow(box, t('tradeStop'), `${fmtPairPrice(stop)} (${fmtPct(pctFrom(stop), 2)})`, 'down');
+    addMetricRow(box, t('tradeTarget'), `${fmtPairPrice(target)} (${fmtPct(pctFrom(target), 2)})`, 'up');
+    addMetricRow(box, t('tradeRR'), `1 : ${rr.toFixed(2)}`, rr >= 1 ? 'up' : 'neutral');
+  };
+
+  // Larga: compra en el retroceso, stop bajo la zona, objetivo en el alto estimado.
+  const lLo = price * (1 - 0.5 * meanAbs);
+  fill(els.tradeLong, lLo, price, lLo * (1 - 1.5 * sigma), high);
+  // Corta: venta en el rebote, stop sobre la zona, objetivo en el bajo estimado.
+  const sHi = price * (1 + 0.5 * meanAbs);
+  fill(els.tradeShort, price, sHi, sHi * (1 + 1.5 * sigma), low);
 }
 
 function buildSummary(fundamental, technical) {

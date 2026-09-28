@@ -34,7 +34,7 @@
 <link rel="dns-prefetch" href="https://api.binance.com">
 <link rel="dns-prefetch" href="https://s3.tradingview.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body data-page="metals">
   <div class="bg-glow"></div>
@@ -176,6 +176,21 @@
         <p class="range-note" data-i18n="rangeNote">Estimado a partir de la volatilidad reciente y el movimiento medio diario del activo, ajustado por la probabilidad combinada de subida/bajada. Es una horquilla estadística informativa, no una garantía.</p>
       </div>
 
+      <div class="range-block">
+        <h3><span data-i18n="tradeTitle">Plan operativo — entrada, stop y salida</span></h3>
+        <div class="trade-grid">
+          <div class="trade-side">
+            <div class="trade-side-title up">▲ <span data-i18n="tradeLong">Posición larga (compra)</span></div>
+            <div class="range-metrics" id="tradeLong"></div>
+          </div>
+          <div class="trade-side">
+            <div class="trade-side-title down">▼ <span data-i18n="tradeShort">Posición corta (venta)</span></div>
+            <div class="range-metrics" id="tradeShort"></div>
+          </div>
+        </div>
+        <p class="range-note" data-i18n="tradeNote">Niveles estadísticos calculados con la volatilidad (σ) y el movimiento medio diario del activo: la entrada espera un retroceso de media jornada, el stop se coloca 1,5σ más allá de la entrada y la salida apunta al extremo estimado del día. Solo información; no es asesoría financiera.</p>
+      </div>
+
       <p class="disclaimer" data-i18n="disclaimer">
         ⚠️ Este análisis se genera automáticamente a partir de datos públicos de mercado e indicadores estadísticos.
         No constituye asesoría financiera. Las inversiones en materias primas conllevan alto riesgo.
@@ -200,7 +215,7 @@
   </footer>
 
   <script defer src="js/version.js?v=12"></script>
-  <script defer src="js/metals.js?v=12"></script>
+  <script defer src="js/metals.js?v=13"></script>
 </body>
 </html>
 
