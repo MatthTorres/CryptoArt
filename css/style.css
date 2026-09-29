@@ -95,28 +95,98 @@ h1, h2 { font-family: 'Sora', sans-serif; }
   gap: 10px;
 }
 
+/* Selector de idioma desplegable. Antes eran 3 botones en fila (ocupaban
+   demasiado en móvil); ahora solo se ve el idioma activo y el resto se abre
+   hacia abajo. .lang-switch pasa a ser el contenedor posicionado. */
 .lang-switch {
-  display: flex;
-  gap: 2px;
-  padding: 4px;
-  background: var(--surface);
-  border: 1px solid var(--surface-border);
-  border-radius: 999px;
+  position: relative;
 }
 
 .lang-btn {
-  border: none;
-  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
   color: var(--text-1);
   font-family: 'Sora', sans-serif;
   font-size: 0.72rem;
   font-weight: 700;
-  padding: 6px 12px;
-  border-radius: 999px;
+  padding: 8px 10px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
-.lang-btn.active { background: var(--accent); color: #1a1200; }
+.lang-btn:hover { border-color: var(--accent); color: var(--text-0); }
+/* El chevron gira al abrir: se rota, no se cambia, para no depender de una
+   fuente de iconos ni de dos caracteres distintos entre temas. */
+.lang-caret {
+  transition: transform 0.2s;
+  font-size: 0.6rem;
+  line-height: 1;
+}
+.lang-btn[aria-expanded="true"] .lang-caret { transform: rotate(180deg); }
+
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 168px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  /* Oculto por defecto. [hidden] es lo que hace display:none cuando el menu
+     esta desplegado con JS, para que el atributo mande sobre el display. */
+  animation: langMenuIn 0.16s ease-out;
+}
+.lang-menu[hidden] { display: none; }
+
+@keyframes langMenuIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.lang-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-1);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.lang-option:hover { background: var(--bg-2); color: var(--text-0); }
+.lang-option[aria-current="true"] { color: var(--accent); }
+.lang-option-code {
+  flex: 0 0 30px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+}
+.lang-option[aria-current="true"] .lang-option-code { color: var(--accent); }
+.lang-option-name { flex: 1 1 auto; }
+/* Punto de la opcion activa: marca visual sin depender solo del color. */
+.lang-option-flag { flex: 0 0 auto; font-size: 0.7rem; color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lang-menu { animation: none; }
+  .lang-caret { transition: none; }
+}
 
 .theme-btn {
   width: 40px; height: 40px;

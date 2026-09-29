@@ -7,9 +7,9 @@
 // Idiomas soportados. `locale` es el BCP-47 para números y fechas: el_pt-BR es
 // el que espera un lector brasileño (R$ 1.234,56 y 28/09/2026).
 const LANGS = [
-  { code: 'es', btn: 'ES', locale: 'es-ES' },
-  { code: 'en', btn: 'EN', locale: 'en-US' },
-  { code: 'pt', btn: 'PT', locale: 'pt-BR' },
+  { code: 'es', btn: 'ES', locale: 'es-ES', name: 'Español' },
+  { code: 'en', btn: 'EN', locale: 'en-US', name: 'English' },
+  { code: 'pt', btn: 'PT', locale: 'pt-BR', name: 'Português' },
 ];
 // Antes el código era binario (`lang === 'en' ? EN : ES`). Con tres idiomas eso
 // devuelve inglés para cualquier idioma que no sea español, así que PT
@@ -30,6 +30,9 @@ const I18N = {
     homeTitle: 'MarketPulse — Inicio',
     aboutTitle: 'MarketPulse — Sobre nosotros',
     homeTagline: 'Cripto · Metales · Forex — Fundamental + Técnico',
+    langEsName: 'Español',
+    langEnName: 'Inglés',
+    langPtName: 'Portugués',
     navHome: 'Inicio',
     navAnalysis: 'Cripto',
     navMetals: 'Metales',
@@ -141,6 +144,9 @@ const I18N = {
     homeTitle: 'MarketPulse — Início',
     aboutTitle: 'MarketPulse — Sobre nós',
     homeTagline: 'Cripto · Metais · Forex — Fundamental + Técnico',
+    langEsName: 'Espanhol',
+    langEnName: 'Inglês',
+    langPtName: 'Português',
     navHome: 'Início',
     navAnalysis: 'Cripto',
     navMetals: 'Metais',
@@ -252,6 +258,9 @@ const I18N = {
     homeTitle: 'MarketPulse — Home',
     aboutTitle: 'MarketPulse — About us',
     homeTagline: 'Crypto · Metals · Forex — Fundamental + Technical',
+    langEsName: 'Spanish',
+    langEnName: 'English',
+    langPtName: 'Portuguese',
     navHome: 'Home',
     navAnalysis: 'Crypto',
     navMetals: 'Metals',
@@ -409,11 +418,16 @@ function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.getAttribute('data-i18n'));
   });
-  // Un botón por idioma: el marcado se genera desde LANGS para que añadir un
-  // idioma no obligue a tocar los 7 HTML.
-  LANGS.forEach(l => {
-    const btn = document.getElementById('lang' + l.code.toUpperCase());
-    if (btn) btn.classList.toggle('active', state.lang === l.code);
+  // Desplegable: solo se ve el código del idioma activo. El botón muestra
+  // `langCurrent` y las opciones se marcan con aria-current (no una clase
+  // .active, que ya no existe en el CSS del desplegable).
+  const current = document.getElementById('langCurrent');
+  if (current) {
+    const active = LANGS.find(l => l.code === state.lang);
+    if (active) current.textContent = active.btn;
+  }
+  document.querySelectorAll('.lang-option').forEach(opt => {
+    opt.setAttribute('aria-current', opt.dataset.lang === state.lang ? 'true' : 'false');
   });
   const st = document.getElementById('statusText');
   if (st) st.textContent = t(state.statusKey);
@@ -994,17 +1008,74 @@ function initHeroSlider() {
   heroStartAuto();
 }
 
+// ---------- Selector de idioma desplegable ----------
+// Boton que muestra el idioma activo y un menu con los tres. Se cierra al
+// pulsar Escape, al hacer clic fuera y al elegir una opcion. Con teclado:
+// Enter/Espacio abre, las flechas mueven el foco entre opciones.
+function initLangDropdown() {
+  const toggle = document.getElementById('langToggle');
+  const menu = document.getElementById('langMenu');
+  if (!toggle || !menu) return;
+  const options = Array.from(menu.querySelectorAll('.lang-option'));
+
+  const setOpen = (open) => {
+    menu.hidden = !open;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+  const isOpen = () => !menu.hidden;
+  const close = (refocus) => {
+    if (!isOpen()) return;
+    setOpen(false);
+    if (refocus) toggle.focus();
+  };
+
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setOpen(!isOpen());
+  });
+
+  options.forEach(opt => {
+    opt.addEventListener('click', () => {
+      setLang(opt.dataset.lang);
+      setOpen(false);
+      toggle.focus();
+    });
+  });
+
+  // Clic fuera: se comprueba que el destino no esté dentro del desplegable,
+  // porque el clic en el propio boton ya esta tratado con stopPropagation.
+  document.addEventListener('click', (e) => {
+    if (isOpen() && !menu.contains(e.target) && e.target !== toggle) close(false);
+  });
+
+  // Escape cierra y devuelve el foco al boton; las flechas recorren el menu.
+  menu.addEventListener('keydown', (e) => {
+    const i = options.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const next = e.key === 'ArrowDown'
+        ? (i + 1) % options.length
+        : (i - 1 + options.length) % options.length;
+      options[next].focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault(); options[0].focus();
+    } else if (e.key === 'End') {
+      e.preventDefault(); options[options.length - 1].focus();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') close(true);
+  });
+}
+
 // ---------- Init ----------
 // El sello de versión, copyright y fecha legal vive en js/version.js (fuente única).
 function initSite() {
   applyTheme();
 
   document.getElementById('themeToggle')?.addEventListener('click', () => setTheme(state.theme === 'dark' ? 'light' : 'dark'));
-  // Los botones se enlazan desde LANGS: añadir un idioma al array los activa en
-  // los 7 HTML sin tocar este fichero ni las páginas.
-  LANGS.forEach(l => {
-    document.getElementById('lang' + l.code.toUpperCase())?.addEventListener('click', () => setLang(l.code));
-  });
+  initLangDropdown();
 
   applyLang();
   stampVersionFooter();

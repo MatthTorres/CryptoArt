@@ -30,10 +30,10 @@
 <link rel="preconnect" href="https://api.coingecko.com" crossorigin>
 <link rel="dns-prefetch" href="https://api.allorigins.win">
 <link rel="dns-prefetch" href="https://api.cors.lol">
-<link rel="preload" href="css/style.css?v=9" as="style">
-<link rel="preload" href="js/site.js?v=19" as="script">
+<link rel="preload" href="css/style.css?v=10" as="style">
+<link rel="preload" href="js/site.js?v=20" as="script">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=9">
+<link rel="stylesheet" href="css/style.css?v=10">
 </head>
 <body data-page="home">
   <div class="bg-glow"></div>
@@ -47,11 +47,16 @@
       </div>
     </div>
     <div class="header-controls">
-      <div class="lang-switch" role="group" aria-label="Idioma / Language">
-        <button class="lang-btn active" id="langEs" type="button">ES</button>
-        <button class="lang-btn" id="langEn" type="button">EN</button>
-    <button class="lang-btn" id="langPt" type="button">PT</button>
-      </div>
+      <div class="lang-switch">
+  <button class="lang-btn" id="langToggle" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="langMenu" aria-label="Idioma / Language">
+    <span id="langCurrent">ES</span><span class="lang-caret" aria-hidden="true">&#9662;</span>
+  </button>
+  <div class="lang-menu" id="langMenu" role="menu" hidden>
+    <button class="lang-option" type="button" role="menuitemradio" data-lang="es" aria-current="true"><span class="lang-option-code">ES</span><span class="lang-option-name" data-i18n="langEsName">Espa&ntilde;ol</span><span class="lang-option-flag" aria-hidden="true">&#9679;</span></button>
+    <button class="lang-option" type="button" role="menuitemradio" data-lang="en" aria-current="false"><span class="lang-option-code">EN</span><span class="lang-option-name" data-i18n="langEnName">English</span><span class="lang-option-flag" aria-hidden="true">&#9679;</span></button>
+    <button class="lang-option" type="button" role="menuitemradio" data-lang="pt" aria-current="false"><span class="lang-option-code">PT</span><span class="lang-option-name" data-i18n="langPtName">Portugu&ecirc;s</span><span class="lang-option-flag" aria-hidden="true">&#9679;</span></button>
+  </div>
+</div>
       <button class="theme-btn" id="themeToggle" type="button" aria-label="Cambiar tema">🌙</button>
     </div>
   </header>
@@ -205,7 +210,7 @@
         <a href="about.html" data-i18n="navAbout">Sobre nosotros</a>
       </nav>
       <p class="footer-meta">
-        <span data-i18n="footerVersion">Versión</span> <span data-app-version>v3.7.1</span>
+        <span data-i18n="footerVersion">Versión</span> <span data-app-version>v3.8.0</span>
         · <span data-i18n="footerRights">Todos los derechos reservados.</span>
         © <span data-app-year>2026</span> MarketPulse
       </p>
@@ -213,6 +218,6 @@
   </footer>
 
   <script defer src="js/version.js?v=13"></script>
-  <script defer src="js/site.js?v=19"></script>
+  <script defer src="js/site.js?v=20"></script>
 </body>
 </html>

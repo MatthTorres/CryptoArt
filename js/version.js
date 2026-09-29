@@ -5,7 +5,7 @@
 // Al publicar una versión nueva, cambia solo APP_VERSION aquí.
 // ==========================================================
 
-const APP_VERSION = '3.7.1'; // Se retira la Plata del selector: su unico plan B (XAGUSDT en Binance) devuelve HTTP 400, no existe; queda un activo con respaldo muerto. 6 activos. metals v19, site v19
+const APP_VERSION = '3.8.0'; // Selector de idioma desplegable en las 7 paginas: un boton con el idioma activo y un menu con los 3 (nombre completo + punto en el activo). Cierra con Escape o clic fuera; flechas para navegar. CSS v10, site v20, app v19, metals v20, forex v19
 const APP_RELEASE = {
   es: '28 de septiembre de 2026',
   en: 'September 28, 2026',

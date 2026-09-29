@@ -5,6 +5,7 @@
 
 // ---------- Configuración de criptoactivos (5 pestañas) ----------
 const LOC_BY_LANG = { es: 'es-ES', en: 'en-US', pt: 'pt-BR' };
+const LOC_BTN = { es: 'ES', en: 'EN', pt: 'PT' };
 const TV_LANG = { es: 'es', en: 'en', pt: 'pt' };
 
 const COINS = {
@@ -33,9 +34,6 @@ const els = {
   currentPrice: document.getElementById('currentPrice'),
   priceChange: document.getElementById('priceChange'),
   themeToggle: document.getElementById('themeToggle'),
-  langEs: document.getElementById('langEs'),
-  langEn: document.getElementById('langEn'),
-  langPt: document.getElementById('langPt'),
   fundBadge: document.getElementById('fundBadge'),
   fundMetrics: document.getElementById('fundMetrics'),
   fundUp: document.getElementById('fundUp'),
@@ -68,6 +66,9 @@ const I18N = {
   es: {
     docTitle: 'MarketPulse — Análisis Diario de {coin}',
     tagline: 'Análisis diario de {coin} · Fundamental + Técnico',
+    langEsName: 'Español',
+    langEnName: 'Inglés',
+    langPtName: 'Portugués',
     navHome: 'Inicio',
     navAnalysis: 'Cripto',
     navMetals: 'Metales',
@@ -158,6 +159,9 @@ const I18N = {
   pt: {
     docTitle: 'MarketPulse — Análise Diária de {coin}',
     tagline: 'Análise diária de {coin} · Fundamental + Técnico',
+    langEsName: 'Espanhol',
+    langEnName: 'Inglês',
+    langPtName: 'Português',
     navHome: 'Início',
     navAnalysis: 'Cripto',
     navMetals: 'Metais',
@@ -248,6 +252,9 @@ const I18N = {
   en: {
     docTitle: 'MarketPulse — Daily {coin} Analysis',
     tagline: 'Daily {coin} analysis · Fundamental + Technical',
+    langEsName: 'Spanish',
+    langEnName: 'English',
+    langPtName: 'Portuguese',
     navHome: 'Home',
     navAnalysis: 'Crypto',
     navMetals: 'Metals',
@@ -383,9 +390,15 @@ function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = fillText(t(el.getAttribute('data-i18n')));
   });
-  // Un recorrido para los 3 botones: anadir un idioma no obliga a tocar mas lineas.
-  [['langEs', 'es'], ['langEn', 'en'], ['langPt', 'pt']].forEach(([id, code]) => {
-    els[id]?.classList.toggle('active', state.lang === code);
+  // Desplegable: el boton muestra el codigo y las opciones se marcan con
+  // aria-current (el CSS ya no usa la clase .active de los botones en fila).
+  const current = document.getElementById('langCurrent');
+  if (current) {
+    const active = LOC_BY_LANG[state.lang] ? state.lang : 'es';
+    current.textContent = (LOC_BTN[active] || active).toUpperCase();
+  }
+  document.querySelectorAll('.lang-option').forEach(opt => {
+    opt.setAttribute('aria-current', opt.dataset.lang === state.lang ? 'true' : 'false');
   });
   els.statusText.textContent = fillText(t(state.statusKey));
   renderAnalysis();
@@ -1158,6 +1171,58 @@ function renderAnalysis() {
   buildSummary(fundamental, technical);
 }
 
+// ---------- Selector de idioma desplegable ----------
+// Es el mismo marcado que en site.js (los 7 HTML comparten el desplegable), asi
+// que la logica se replica aqui en vez de depender de site.js, que no se carga
+// en estas paginas. Se le pasa setLang para no duplicar la persistencia.
+function initLangDropdown(pick) {
+  const toggle = document.getElementById('langToggle');
+  const menu = document.getElementById('langMenu');
+  if (!toggle || !menu) return;
+  const options = Array.from(menu.querySelectorAll('.lang-option'));
+
+  const setOpen = (open) => {
+    menu.hidden = !open;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+  const isOpen = () => !menu.hidden;
+
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setOpen(!isOpen());
+  });
+  options.forEach(opt => {
+    opt.addEventListener('click', () => {
+      pick(opt.dataset.lang);
+      setOpen(false);
+      toggle.focus();
+    });
+  });
+  document.addEventListener('click', (e) => {
+    if (isOpen() && !menu.contains(e.target) && e.target !== toggle) setOpen(false);
+  });
+  menu.addEventListener('keydown', (e) => {
+    const i = options.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const next = e.key === 'ArrowDown'
+        ? (i + 1) % options.length
+        : (i - 1 + options.length) % options.length;
+      options[next].focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault(); options[0].focus();
+    } else if (e.key === 'End') {
+      e.preventDefault(); options[options.length - 1].focus();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen()) {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+}
+
 // ---------- Inicialización ----------
 // Estrategia anti-429 para navegar BTC->ETH->SOL->XRP->DOGE sin que las
 // últimas fallen: CoinGecko secuencial (gate 2s) + fallback Binance + cache.
@@ -1215,9 +1280,7 @@ async function init() {
 els.themeToggle?.addEventListener('click', () => {
   setTheme(state.theme === 'dark' ? 'light' : 'dark');
 });
-els.langEs?.addEventListener('click', () => setLang('es'));
-els.langEn?.addEventListener('click', () => setLang('en'));
-els.langPt?.addEventListener('click', () => setLang('pt'));
+initLangDropdown(() => setLang);
 
 // ---------- Pestañas de cripto y navegación activa ----------
 document.querySelectorAll('.coin-tab').forEach(a => {
