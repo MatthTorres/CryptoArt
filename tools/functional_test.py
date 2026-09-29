@@ -101,11 +101,24 @@ window.addEventListener('load', function () {
   } else {
     out.push('datos=sin_elemento');
   }
+
+  // Sexta parte: ¿puede el navegador alcanzar la API desde esta pagina?
+  // En headless puede estar bloqueado por la red, y eso no dice nada del
+  // sitio: se mide aparte para no confundirlo con un fallo del codigo.
+  fetch('https://api.coingecko.com/api/v3/ping')
+    .then(function (r) { window.__ping = 'ok_' + r.status; })
+    .catch(function (e) { window.__ping = 'fallo_' + String(e.message).slice(0, 40); });
+
+  // Tercera parte: errores de consola acumulados.
   out.push('errores_js=' + (window.__errs ? window.__errs.length : 0));
   if (window.__errs) { out.push('detalle=' + window.__errs.join(' | ')); }
   var d = document.createElement('pre');
   d.id = 'TESTOUT';
-  d.textContent = out.join(' ;; ');
+  // El ping se resuelve despues: se espera un poco y se anade al informe.
+  setTimeout(function () {
+    out.push('api=' + (window.__ping || 'sin_respuesta'));
+    d.textContent = out.join(' ;; ');
+  }, 1500);
   document.body.appendChild(d);
 });
 window.__errs = [];
@@ -170,6 +183,7 @@ def main() -> int:
               f"menu={data.get('menu_abierto')}  "
               f"tema={data.get('tema_cambio')}  "
               f"errores={data.get('errores_js')}  "
+              f"api={data.get('api')}  "
               f"datos={data.get('datos')}")
         if not ok:
             fallos += 1

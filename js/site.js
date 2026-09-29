@@ -805,9 +805,19 @@ async function loadHomeData() {
 // 429 para algun id. Antes un solo id en fallo hacia fallar la llamada entera
 // y la portada se quedaba vacia aunque los otros cuatro vinieran bien.
 async function fetchMarketsPart(ids) {
-  const wanted = ids.split(',');
+  // Primero el lote entero: una sola peticion es lo normal y lo mas rapido, y
+  // es lo que menos carga la API. Solo si ese lote falla (429 por exceso de
+  // peticiones) se va id por id y se acepta lo que venga: es preferible
+  // enseñar cuatro tarjetas a ninguna.
+  const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd` +
+              `&ids=${ids}&price_change_percentage=24h,7d&sparkline=false`;
+  try {
+    const r = await fetchRetry(url);
+    if (Array.isArray(r) && r.length) return r;
+  } catch { /* cae al recorrido individual */ }
+
   const found = new Map();
-  for (const id of wanted) {
+  for (const id of ids.split(',')) {
     try {
       const r = await fetchRetry(
         `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd` +
@@ -815,7 +825,7 @@ async function fetchMarketsPart(ids) {
       if (Array.isArray(r) && r.length) found.set(id, r[0]);
     } catch { /* ese id se queda fuera; el resto de la portada se muestra igual */ }
   }
-  return wanted.map((id) => found.get(id)).filter(Boolean);
+  return ids.split(',').map((id) => found.get(id)).filter(Boolean);
 }
 
 function applyHomePayload(payload) {
