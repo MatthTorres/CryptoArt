@@ -1,0 +1,14 @@
+# Configuración de despliegue en Netlify.
+# El sitio es 100% estático: no hay build que ejecutar, solo se publica la raíz.
+# Por eso la carpeta de publicación es "." y el comando de build se deja vacío.
+
+[build]
+  publish = "."
+  command = ""
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# El 404 lo serve Netlify automáticamente desde 404.html (es la convención).
+# No hace falta una redirección: las URLs con ?asset= / ?coin= / ?pair=
+# las resuelve el JS, así que no hay reglas de rewrite que puedan romperlas.

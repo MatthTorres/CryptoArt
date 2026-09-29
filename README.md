@@ -58,7 +58,9 @@ python -m http.server 8090
 
 Es una web **100% estática** (sin backend). Opciones gratuitas:
 
-- **Netlify Drop**: arrastrar la carpeta a https://app.netlify.com/drop
+- **Netlify (recomendado)**: arrastra la carpeta a https://app.netlify.com/drop y ponle el nombre `marketpulse` → queda en `https://marketpulse.netlify.app`, con HTTPS y certificado automático. Para conectarlo al repo: **Add new site → Import an existing project** → elige el repositorio; no hay comando de build (se publica la raíz, ya lo declara `netlify.toml`).
+  - ⚠️ **Al fijar la URL definitiva hay que reejecutar el origen**: `python tools/set_site_origin.py https://marketpulse.netlify.app` y commit, porque las URLs absolutas (`canonical`, `og:url`, `robots.txt`, `sitemap.xml`) llevan el dominio de GitHub hasta que se cambien. Si más adelante se renombra el repo o se cambia de host, ese paso se repite.
+- **Netlify Drop** (sin cuenta, prueba rápida): arrastrar la carpeta a https://app.netlify.com/drop
 - **GitHub Pages**: subir a un repo → Settings → Pages → rama `main`
 - **Vercel / Cloudflare Pages**: CLI o integración con GitHub
 
