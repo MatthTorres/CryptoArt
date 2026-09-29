@@ -535,13 +535,24 @@ async function fetchJSON(url, tries = 3, baseDelay = 1200, useGate = true) {
         await new Promise(r => setTimeout(r, wait));
         continue;
       }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        // Un 4xx que no sea 408/429 es una respuesta definitiva (403 por bloqueo
+        // de API, 404 por ruta mal escrita): repetirlo solo suma espera sin
+        // cambiar el resultado, y el respaldo está en otra función. Con el 403 que
+        // devuelve CoinGecko desde algunas IPs, la página de cripto gastaba 3
+        // intentos y ~5 s de esperas para acabar cayendo igual a Binance.
+        if (res.status < 500 && res.status !== 408 && res.status !== 429) {
+          throw Object.assign(new Error(`HTTP ${res.status}`), { fatal: true });
+        }
+        throw new Error(`HTTP ${res.status}`);
+      }
       const out = await res.json();
       clearTimeout(timer);
       return out;
     } catch (e) {
       clearTimeout(timer);
       lastErr = e && e.name === 'AbortError' ? new Error('timeout 8s') : e;
+      if (lastErr && lastErr.fatal) break;   // no hay nada que ganar reintentando
       if (i === tries - 1) break;
       await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i) + Math.random() * 800));
     }
@@ -947,6 +958,9 @@ function setBadge(el, upProb) {
 
 // ---------- Gráfico en tiempo real (TradingView) ----------
 let tvScriptPromise = null;
+// Firma «símbolo|tema|idioma» de lo que hay pintado en el widget ahora mismo. El
+// símbolo entra porque cambiar de pestaña de cripto lo cambia.
+let tvSignature = null;
 
 function loadTradingViewScript() {
   if (tvScriptPromise) return tvScriptPromise;
@@ -966,6 +980,7 @@ function loadTradingViewScript() {
 // 4 s), de modo que no retrasa el primer pintado ni el analisis.
 let tvReady = false;
 let tvObserved = false;
+let tvSafetyTimer = null;
 function scheduleTradingView() {
   if (tvReady) return;
   const container = document.getElementById('tvChart');
@@ -973,6 +988,9 @@ function scheduleTradingView() {
   const start = () => {
     if (tvReady) return;
     tvReady = true;
+    // La red de seguridad ya no tiene sentido una vez que el widget arrancó:
+    // sin limpiarla, el temporizador queda vivo en el event loop hasta los 4 s.
+    if (tvSafetyTimer) { clearTimeout(tvSafetyTimer); tvSafetyTimer = null; }
     createTradingView();
   };
   if (typeof IntersectionObserver === 'undefined') { start(); return; }
@@ -982,12 +1000,23 @@ function scheduleTradingView() {
       if (entries.some(e => e.isIntersecting)) { io.disconnect(); start(); }
     }, { rootMargin: '300px' });
     io.observe(container);
-    setTimeout(start, 4000);   // por si el observer no llegara a dispararse
+    tvSafetyTimer = setTimeout(start, 4000);   // por si el observer no llegara a dispararse
   }
+}
+
+function tvSignatureNow() {
+  return `${coin.tv}|${state.theme === 'light' ? 'light' : 'dark'}|${TV_LANG[state.lang] || 'es'}`;
 }
 
 function renderTradingView() {
   if (!tvReady) { scheduleTradingView(); return; }
+  // El widget NO se recrea en cada cambio de idioma o tema: TradingView no expone
+  // una API para recolorearlo en caliente, así que la única forma de «cambiar» el
+  // locale era destruir el iframe y crear otro, que recarga la serie entera del
+  // gráfico (petición de red + parpadeo) en cada clic del menú de idioma. Se
+  // recrea solo si el símbolo, el idioma o el tema han cambiado de verdad; si no,
+  // no se toca el DOM.
+  if (tvSignature === tvSignatureNow()) return;
   createTradingView();
 }
 
@@ -996,6 +1025,7 @@ function createTradingView() {
   if (!container) return;
   const theme = state.theme === 'light' ? 'light' : 'dark';
   const locale = TV_LANG[state.lang] || 'es';
+  tvSignature = tvSignatureNow();
 
   loadTradingViewScript()
     .then(() => {

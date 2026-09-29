@@ -583,25 +583,54 @@ function writeSegmentStore(key, data) {
   try { localStorage.setItem(segmentStoreKey(key), JSON.stringify({ ts: Date.now(), data })); } catch { /* cuota */ }
 }
 
+// En cada ronda sale UNA peticion por proxy (los gratuitos limitan por IP) y gana
+// la primera que traiga datos validos; si ninguna responde, se prueba con el otro
+// host de Yahoo. Antes los 4 combos se recorrían EN SERIE, con 8 s de tope cada
+// uno: un solo proxy colgado convertia la carga de un símbolo en 32 s, y como el
+// segmento de metals pide 6 símbolos en dos tandas, el home podía quedarse 64 s
+// esperando. En carrera, el peor caso son 2 rondas x RACE_TIMEOUT_MS.
+const SEGMENT_RACE_TIMEOUT_MS = 7000;
 async function fetchSegmentChart(yahooSymbol) {
   const path = `/v8/finance/chart/${yahooSymbol}?interval=1d&range=5d`;
+  const group = new AbortController();
+  const attempt = (proxy, host) => fetchWithTimeout(
+    proxy + encodeURIComponent(host + path), SEGMENT_RACE_TIMEOUT_MS, { signal: group.signal },
+  ).then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }).then(data => {
+    if (data && data.chart && data.chart.result && data.chart.result[0]) return data;
+    throw new Error('yahoo empty');
+  });
   let lastErr = null;
   for (const host of SEGMENT_HOSTS) {
-    for (const proxy of SEGMENT_PROXIES) {
-      try {
-        // Tope 8 s: sin AbortController, un proxy colgado dejaba el titular
-        // rotatorio sin datos de metales/divisas hasta el timeout del navegador.
-        const data = await fetchRetry(proxy + encodeURIComponent(host + path), 1, 8000);
-        if (data && data.chart && data.chart.result && data.chart.result[0]) return data;
-        lastErr = new Error('yahoo empty');
-      } catch (e) { lastErr = e; }
+    try {
+      const data = await Promise.any(SEGMENT_PROXIES.map(proxy => attempt(proxy, host)));
+      group.abort();            // la ruta perdedora deja de gastar cuota
+      return data;
+    } catch (agg) {
+      lastErr = (agg && agg.errors && agg.errors[0]) || agg;
     }
   }
-  throw lastErr || new Error('segment Yahoo failed');
+  group.abort();
+  throw (lastErr instanceof Error ? lastErr : new Error('segment Yahoo failed'));
 }
 
-async function loadSegmentQuotes(key) {
-  if (cached.segments && cached.segments[key]) return cached.segments[key];
+// Cargas en vuelo por segmento. El titular rotatorio llama a renderSegmentInfo cada
+// 30 s y applyLang en cada cambio de idioma; sin este registro, cada una disparaba
+// su propio tanda de peticiones mientras la anterior seguía en curso, y la ráfaga
+// resultante disparaba el rate-limit del proxy (y con ella, más demora).
+const segmentInflight = {};
+function loadSegmentQuotes(key) {
+  if (cached.segments && cached.segments[key]) return Promise.resolve(cached.segments[key]);
+  if (segmentInflight[key]) return segmentInflight[key];
+  const p = fetchSegmentQuotes(key)
+    .finally(() => { delete segmentInflight[key]; });
+  segmentInflight[key] = p;
+  return p;
+}
+
+async function fetchSegmentQuotes(key) {
   const stored = readSegmentStore(key);
   if (stored) {
     if (!cached.segments) cached.segments = {};
@@ -609,25 +638,34 @@ async function loadSegmentQuotes(key) {
     return stored;
   }
   const list = SEGMENT_QUOTES[key] || [];
-  // El segmento de metales pasó de 5 a 8 símbolos. Lanzarlos todos en paralelo
-  // es lo que dispara el rate-limit del proxy gratuito, así que se piden en
-  // tandas de 4: la latencia apenas sube y se sigue sin perder cotizaciones
-  // (Promise.allSettled degrada a «sin datos» solo si un símbolo falla).
+  // El segmento de metales pide 6 símbolos. Lanzarlos todos a la vez dispara el
+  // rate-limit del proxy gratuito, así que la concurrencia se limita a 4. Se usa
+  // un grupo de trabajadores en lugar de tandas secuenciales: con el bucle
+  // `for (i += 4) await ...` un único símbolo lento de una tanda bloqueaba el
+  // arranque de la siguiente y la latencia total era «tanda más lenta x nº de
+  // tandas». Aquí cada símbolo arranca en cuanto se libera un hueco.
+  // Cada símbolo se resuelve con su propio estado (fulfilled/rejected) para que un
+  // fallo degrade a «sin datos» solo para esa cotización, sin tirar el segmento.
   const CONCURRENCY = 4;
-  const settled = [];
-  for (let i = 0; i < list.length; i += CONCURRENCY) {
-    const batch = list.slice(i, i + CONCURRENCY);
-    settled.push(...await Promise.allSettled(batch.map(q =>
-      fetchSegmentChart(q.yahoo)
-        .then(d => {
-          const closes = (d.chart.result[0].indicators.quote[0].close || []).filter(v => v != null);
-          if (closes.length < 2) throw new Error('sin datos');
-          const last = closes[closes.length - 1];
-          const prev = closes[closes.length - 2];
-          return { es: q.es, en: q.en, chg24: ((last - prev) / prev) * 100 };
-        })
-    )));
-  }
+  const settled = new Array(list.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < list.length) {
+      const i = next++;
+      const q = list[i];
+      try {
+        const d = await fetchSegmentChart(q.yahoo);
+        const closes = (d.chart.result[0].indicators.quote[0].close || []).filter(v => v != null);
+        if (closes.length < 2) throw new Error('sin datos');
+        const last = closes[closes.length - 1];
+        const prev = closes[closes.length - 2];
+        settled[i] = { status: 'fulfilled', value: { es: q.es, en: q.en, pt: q.pt, chg24: ((last - prev) / prev) * 100 } };
+      } catch (e) {
+        settled[i] = { status: 'rejected', reason: e };
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, list.length) }, () => worker()));
   const quotes = settled.filter(r => r.status === 'fulfilled').map(r => r.value)
     .sort((a, b) => b.chg24 - a.chg24);
   if (quotes.length < 2) throw new Error('sin cotizaciones');
@@ -709,22 +747,41 @@ function renderSegmentInfo(index) {
 // ---------- Fetch con reintento (cubre el rate-limit429 de CoinGecko) ----------
 // Timeout corto: la primera visita no puede quedarse colgada esperando a una
 // API lenta. Si un proveedor tarda >8 s, se aborta y se usa caché/fallback.
-function fetchWithTimeout(url, ms = 8000) {
+// Acepta `options` para encadenar una signal externa (cancelar una ruta perdedora
+// de la carrera) con la del timeout propio.
+function fetchWithTimeout(url, ms = 8000, options = null) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
-  return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+  const outer = options && options.signal;
+  if (outer) {
+    if (outer.aborted) ctrl.abort();
+    else outer.addEventListener('abort', () => ctrl.abort(), { once: true });
+  }
+  return fetch(url, { ...(options || {}), signal: ctrl.signal })
+    .finally(() => clearTimeout(timer));
 }
 async function fetchRetry(url, tries = 3, ms = 8000) {
+  let lastErr = null;
   for (let i = 0; i < tries; i++) {
     try {
       const res = await fetchWithTimeout(url, ms);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const err = new Error(`HTTP ${res.status}`);
+        // Un 4xx que no sea 408/429 es una respuesta definitiva (403 por bloqueo
+        // de API, 404 por ruta mal escrita): repetirlo solo suma espera sin
+        // cambiar el resultado. Se marca `fatal` y el reintento se abandona.
+        if (res.status < 500 && res.status !== 408 && res.status !== 429) err.fatal = true;
+        throw err;
+      }
       return await res.json();
     } catch (e) {
+      lastErr = e;
+      if (e && e.fatal) throw e;           // no hay nada que ganar reintentando
       if (i === tries - 1) throw e;
       await new Promise(r => setTimeout(r, 1500 * (i + 1)));
     }
   }
+  throw lastErr || new Error('fetch failed');
 }
 
 function showRetry(container, onClick) {
@@ -817,15 +874,26 @@ async function fetchMarketsPart(ids) {
   } catch { /* cae al recorrido individual */ }
 
   const found = new Map();
-  for (const id of ids.split(',')) {
-    try {
-      const r = await fetchRetry(
-        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd` +
-        `&ids=${id}&price_change_percentage=24h,7d&sparkline=false`);
-      if (Array.isArray(r) && r.length) found.set(id, r[0]);
-    } catch { /* ese id se queda fuera; el resto de la portada se muestra igual */ }
-  }
-  return ids.split(',').map((id) => found.get(id)).filter(Boolean);
+  // Los ids se piden en paralelo (limitados a 3) en vez de uno detrás de otro: en
+  // serie, cinco ids a 8 s de tope cada uno son 40 s de espera para pintar cuatro
+  // tarjetas que podrían haber llegado en 8 s. El límite evita la ráfaga que
+  // dispara el 429 de CoinGecko, que es justo lo que se intenta esquivar aquí.
+  const idList = ids.split(',');
+  const CONCURRENCY = 3;
+  let next = 0;
+  const worker = async () => {
+    while (next < idList.length) {
+      const id = idList[next++];
+      try {
+        const r = await fetchRetry(
+          `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd` +
+          `&ids=${id}&price_change_percentage=24h,7d&sparkline=false`);
+        if (Array.isArray(r) && r.length) found.set(id, r[0]);
+      } catch { /* ese id se queda fuera; el resto de la portada se muestra igual */ }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, idList.length) }, () => worker()));
+  return idList.map((id) => found.get(id)).filter(Boolean);
 }
 
 function applyHomePayload(payload) {

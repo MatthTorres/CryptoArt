@@ -544,10 +544,17 @@ async function fetchRetry(url, tries = 4, baseDelay = 1500) {
         await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i) + Math.random() * 1000));
         continue;
       }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        // Un 4xx que no sea 408/429 es definitivo (403/404 del proxy o del origen):
+        // repetirlo suma espera sin cambiar nada. Solo 429 y 5xx son transitorios.
+        const err = new Error(`HTTP ${res.status}`);
+        if (res.status < 500 && res.status !== 408 && res.status !== 429) err.fatal = true;
+        throw err;
+      }
       return await res.json();
     } catch (e) {
       lastErr = e && e.name === 'AbortError' ? new Error('timeout 8s') : e;
+      if (lastErr && lastErr.fatal) break;   // no hay nada que ganar reintentando
       if (isLast) break;
       await new Promise(r => setTimeout(r, baseDelay * (i + 1) + Math.random() * 800));
     }
@@ -937,6 +944,9 @@ function drawChart(canvas, prices, dates) {
 
 // ---------- Gráfico en tiempo real (TradingView) ----------
 let tvScriptPromise = null;
+// Firma «tema|idioma» de lo que hay pintado en el widget ahora mismo. Sirve para
+// no recrearlo cuando el cambio no le afecta (ver renderTradingView).
+let tvSignature = null;
 
 function loadTradingViewScript() {
   if (tvScriptPromise) return tvScriptPromise;
@@ -956,6 +966,7 @@ function loadTradingViewScript() {
 // 4 s), de modo que no retrasa el primer pintado ni el analisis.
 let tvReady = false;
 let tvObserved = false;
+let tvSafetyTimer = null;
 function scheduleTradingView() {
   if (tvReady) return;
   const container = document.getElementById('tvChart');
@@ -963,6 +974,9 @@ function scheduleTradingView() {
   const start = () => {
     if (tvReady) return;
     tvReady = true;
+    // La red de seguridad ya no tiene sentido una vez que el widget arrancó:
+    // sin limpiarla, el temporizador queda vivo en el event loop hasta los 4 s.
+    if (tvSafetyTimer) { clearTimeout(tvSafetyTimer); tvSafetyTimer = null; }
     createTradingView();
   };
   if (typeof IntersectionObserver === 'undefined') { start(); return; }
@@ -972,12 +986,21 @@ function scheduleTradingView() {
       if (entries.some(e => e.isIntersecting)) { io.disconnect(); start(); }
     }, { rootMargin: '300px' });
     io.observe(container);
-    setTimeout(start, 4000);   // por si el observer no llegara a dispararse
+    tvSafetyTimer = setTimeout(start, 4000);   // por si el observer no llegara a dispararse
   }
 }
 
 function renderTradingView() {
   if (!tvReady) { scheduleTradingView(); return; }
+  // El widget NO se recrea en cada cambio de idioma o tema: TradingView no expone
+  // una API para recolorearlo en caliente, así que la única forma de «cambiar» el
+  // locale era destruir el iframe y crear otro, que recarga la serie entera del
+  // gráfico (petición de red + parpadeo) en cada clic del menú de idioma. Se
+  // recrea solo si el idioma o el tema han cambiado de verdad respecto a lo que se
+  // pintó; si no, no se toca el DOM.
+  const theme = state.theme === 'light' ? 'light' : 'dark';
+  const locale = TV_LANG[state.lang] || 'es';
+  if (tvSignature === `${theme}|${locale}`) return;
   createTradingView();
 }
 
@@ -986,6 +1009,7 @@ function createTradingView() {
   if (!container) return;
   const theme = state.theme === 'light' ? 'light' : 'dark';
   const locale = TV_LANG[state.lang] || 'es';
+  tvSignature = `${theme}|${locale}`;
 
   loadTradingViewScript()
     .then(() => {
