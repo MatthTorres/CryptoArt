@@ -5,7 +5,7 @@
 // Al publicar una versión nueva, cambia solo APP_VERSION aquí.
 // ==========================================================
 
-const APP_VERSION = '3.8.0'; // Selector de idioma desplegable en las 7 paginas: un boton con el idioma activo y un menu con los 3 (nombre completo + punto en el activo). Cierra con Escape o clic fuera; flechas para navegar. CSS v10, site v20, app v19, metals v20, forex v19
+const APP_VERSION = '3.8.1'; // Analitica anonima con Umami Cloud (sin cookies, IP anonimizada) en las 7 paginas, y el punto 5 de legal.html corregido en ES/EN/PT: nombra al encargado del tratamiento, que datos se recogen, ubicacion de servidores y retencion de 6 meses. site v21, 3.8.1
 const APP_RELEASE = {
   es: '28 de septiembre de 2026',
   en: 'September 28, 2026',
