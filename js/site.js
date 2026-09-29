@@ -44,6 +44,9 @@ const I18N = {
     metalPlatinum: 'Usado en catalizadores y joyería.',
     metalPalladium: 'El metal más raro de los preciosos.',
     metalOil: 'La materia prima energética más operada.',
+    metalCopper: 'El metal industrial de la electrificación.',
+    metalUranium: 'El combustible de la energía nuclear.',
+    metalCarbon: 'La transición energética, medida en el mercado.',
     forexTitle: 'Elige un activo Forex para analizar',
     forexDesc: 'Cotizaciones del mercado de divisas con visión fundamental, lectura técnica, probabilidades de subida/bajada, rango estimado del día y recomendación profesional.',
     forexCardEUR: 'La divisa más operada del mundo.',
@@ -85,7 +88,7 @@ const I18N = {
     aboutHow5: 'Recomendación profesional combinada (compra / mantenimiento / venta) con gráficos diario y en tiempo real.',
     aboutVerticalsTitle: 'Tres mercados, una metodología',
     aboutVerticalCrypto: 'Cripto: Bitcoin, Ethereum, Solana, XRP y Dogecoin, con precio, capitalización, volumen y sentimiento del mercado.',
-    aboutVerticalMetals: 'Metales y energía: Oro, Plata, Platino, Paladio y Petróleo WTI, con precio al contado y variación del día.',
+    aboutVerticalMetals: 'Metales, energía y carbono: Oro, Plata, Platino, Paladio, Petróleo WTI, Cobre, Uranio y Carbono, con precio y variación del día.',
     aboutVerticalForex: 'Divisas: EUR/USD, GBP/USD, USD/JPY, USD/COP y USD/MXN, con cotización en vivo y variación del día.',
     aboutSourcesTitle: 'Transparencia y privacidad',
     aboutSourcesText: 'Trabajamos con proveedores de datos de mercado reconocidos y renovamos la información de forma continua.',
@@ -154,6 +157,9 @@ const I18N = {
     metalPlatinum: 'Used in catalysts and jewelry.',
     metalPalladium: 'The rarest precious metal.',
     metalOil: 'The most traded energy commodity.',
+    metalCopper: 'The industrial metal behind electrification.',
+    metalUranium: 'The fuel of nuclear energy.',
+    metalCarbon: 'The energy transition, measured by the market.',
     forexTitle: 'Choose a Forex asset to analyze',
     forexDesc: 'Currency market quotes with fundamental view, technical read, up/down probabilities, daily estimated range and professional recommendation.',
     forexCardEUR: 'The most traded pair in the world.',
@@ -195,7 +201,7 @@ const I18N = {
     aboutHow5: 'Combined professional recommendation (buy / hold / sell) with daily and real-time charts.',
     aboutVerticalsTitle: 'Three markets, one methodology',
     aboutVerticalCrypto: 'Crypto: Bitcoin, Ethereum, Solana, XRP and Dogecoin, with price, market cap, volume and market sentiment.',
-    aboutVerticalMetals: 'Metals & energy: Gold, Silver, Platinum, Palladium and WTI Oil, with spot price and daily change.',
+    aboutVerticalMetals: 'Metals, energy & carbon: Gold, Silver, Platinum, Palladium, WTI Oil, Copper, Uranium and Carbon, with price and daily change.',
     aboutVerticalForex: 'Forex: EUR/USD, GBP/USD, USD/JPY, USD/COP and USD/MXN, with live quotes and daily change.',
     aboutSourcesTitle: 'Transparency and privacy',
     aboutSourcesText: 'We work with recognised market-data providers and refresh the information continuously.',
@@ -386,6 +392,9 @@ const SEGMENT_QUOTES = {
     { yahoo: 'PL=F', es: 'Platino', en: 'Platinum' },
     { yahoo: 'PA=F', es: 'Paladio', en: 'Palladium' },
     { yahoo: 'CL=F', es: 'Petróleo', en: 'Oil' },
+    { yahoo: 'HG=F', es: 'Cobre', en: 'Copper' },
+    { yahoo: 'SRUUF', es: 'Uranio', en: 'Uranium' },
+    { yahoo: 'KRBN', es: 'Carbono', en: 'Carbon' },
   ],
   forex: [
     { yahoo: 'EURUSD=X', es: 'EUR/USD', en: 'EUR/USD' },
@@ -447,16 +456,25 @@ async function loadSegmentQuotes(key) {
     return stored;
   }
   const list = SEGMENT_QUOTES[key] || [];
-  const settled = await Promise.allSettled(list.map(q =>
-    fetchSegmentChart(q.yahoo)
-      .then(d => {
-        const closes = (d.chart.result[0].indicators.quote[0].close || []).filter(v => v != null);
-        if (closes.length < 2) throw new Error('sin datos');
-        const last = closes[closes.length - 1];
-        const prev = closes[closes.length - 2];
-        return { es: q.es, en: q.en, chg24: ((last - prev) / prev) * 100 };
-      })
-  ));
+  // El segmento de metales pasó de 5 a 8 símbolos. Lanzarlos todos en paralelo
+  // es lo que dispara el rate-limit del proxy gratuito, así que se piden en
+  // tandas de 4: la latencia apenas sube y se sigue sin perder cotizaciones
+  // (Promise.allSettled degrada a «sin datos» solo si un símbolo falla).
+  const CONCURRENCY = 4;
+  const settled = [];
+  for (let i = 0; i < list.length; i += CONCURRENCY) {
+    const batch = list.slice(i, i + CONCURRENCY);
+    settled.push(...await Promise.allSettled(batch.map(q =>
+      fetchSegmentChart(q.yahoo)
+        .then(d => {
+          const closes = (d.chart.result[0].indicators.quote[0].close || []).filter(v => v != null);
+          if (closes.length < 2) throw new Error('sin datos');
+          const last = closes[closes.length - 1];
+          const prev = closes[closes.length - 2];
+          return { es: q.es, en: q.en, chg24: ((last - prev) / prev) * 100 };
+        })
+    )));
+  }
   const quotes = settled.filter(r => r.status === 'fulfilled').map(r => r.value)
     .sort((a, b) => b.chg24 - a.chg24);
   if (quotes.length < 2) throw new Error('sin cotizaciones');

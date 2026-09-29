@@ -1,18 +1,44 @@
 // ==========================================================
-// MarketPulse — Análisis de Metales y Energía (Oro, Plata, Platino, Paladio, Petróleo)
+// MarketPulse — Análisis de Metales, Energía y Carbono
+// (Oro, Plata, Platino, Paladio, Petróleo, Cobre, Uranio, Carbono)
 // Fuentes: Yahoo Finance (vía proxy AllOrigins) para historial + gold-api.com para spot
 // ==========================================================
 
-// ---------- Configuración de activos (5 pestañas) ----------
+// ---------- Configuración de activos (8 pestañas) ----------
 // tv: identificador exacto de TradingView. Los símbolos spot de metales usan el
 // proveedor OANDA (canónico en TradingView); un prefijo inexistente hace que el
 // widget muestre «Este símbolo no existe».
+//
+// goldApi: true solo para los 4 metales preciosos que cubre gold-api.com.
+// El resto usa el último cierre de Yahoo (loadSpotPrice lo trata como opcional).
+//
+// OJO con los instrumentos, que no son homogéneos entre activos:
+//   - HG=F y COMEX:HG1! son el mismo mercado (cobre del COMEX) en USD por libra.
+//   - SRUUF es un ETF de uranio FÍSICO (Sprott), no el metal al contado: es el
+//     proxy más fiel que publica Yahoo, porque los futuros de uranio U3O8
+//     (COMEX:UX1!, USD por libra) no tienen serie diaria en Yahoo. Por eso el
+//     gráfico de tv usa el MISMO instrumento que las métricas (OTC:SRUUF) y no
+//     UX1!: si se mezclaran, el precio del gráfico no cuadraría con el del panel.
+//   - El carbono tampoco tiene serie de futuros EUA en Yahoo (C2E=F devuelve 7
+//     velas, insuficiente para el análisis técnico), así que se usa KRBN
+//     (KraneShares Global Carbon Strategy ETF, AMEX:KRBN), que sigue el índice
+//     S&P Global Carbon Credit y replica futuros de permisos de emisión reales:
+//     EUA, CCA (California), RGGI, UKA y WCA. Se descartó CARZ porque, pese al
+//     nombre, es un ETF de acciones de la estrategia de carbono, no de los
+//     futuros de allowances, así que sigue las cotizaciones y no el precio del
+//     carbono. Mismo criterio que el uranio: gráfico y métricas sobre el mismo
+//     instrumento para que cuadren.
+//   - Los tres cotizan en USD, así que quote queda sin usar en la configuración
+//     (fmtUSD lo respeta por si algún activo futuro se apoya en otra moneda).
 const ASSETS = {
-  gold:      { id: 'gold',      name: 'Oro',          nameEn: 'Gold',      symbol: 'XAU', yahoo: 'GC=F',  tv: 'OANDA:XAUUSD' },
-  silver:    { id: 'silver',    name: 'Plata',        nameEn: 'Silver',    symbol: 'XAG', yahoo: 'SI=F',  tv: 'OANDA:XAGUSD' },
-  platinum:  { id: 'platinum',  name: 'Platino',      nameEn: 'Platinum',  symbol: 'XPT', yahoo: 'PL=F',  tv: 'OANDA:XPTUSD' },
-  palladium: { id: 'palladium', name: 'Paladio',      nameEn: 'Palladium', symbol: 'XPD', yahoo: 'PA=F',  tv: 'OANDA:XPDUSD' },
+  gold:      { id: 'gold',      name: 'Oro',          nameEn: 'Gold',      symbol: 'XAU', yahoo: 'GC=F',  tv: 'OANDA:XAUUSD',   goldApi: true },
+  silver:    { id: 'silver',    name: 'Plata',        nameEn: 'Silver',    symbol: 'XAG', yahoo: 'SI=F',  tv: 'OANDA:XAGUSD',   goldApi: true },
+  platinum:  { id: 'platinum',  name: 'Platino',      nameEn: 'Platinum',  symbol: 'XPT', yahoo: 'PL=F',  tv: 'OANDA:XPTUSD',   goldApi: true },
+  palladium: { id: 'palladium', name: 'Paladio',      nameEn: 'Palladium', symbol: 'XPD', yahoo: 'PA=F',  tv: 'OANDA:XPDUSD',   goldApi: true },
   oil:       { id: 'oil',       name: 'Petróleo WTI', nameEn: 'WTI Oil',   symbol: 'CL',  yahoo: 'CL=F',  tv: 'NYMEX:CL1!' },
+  copper:    { id: 'copper',    name: 'Cobre',        nameEn: 'Copper',    symbol: 'HG',  yahoo: 'HG=F',  tv: 'COMEX:HG1!' },
+  uranium:   { id: 'uranium',   name: 'Uranio',       nameEn: 'Uranium',   symbol: 'U',   yahoo: 'SRUUF', tv: 'OTC:SRUUF' },
+  carbon:    { id: 'carbon',    name: 'Carbono',      nameEn: 'Carbon',    symbol: 'CO2', yahoo: 'KRBN',  tv: 'AMEX:KRBN' },
 };
 
 const assetParam = new URLSearchParams(location.search).get('asset');
@@ -255,7 +281,10 @@ function t(key) {
 function locale() { return state.lang === 'es' ? 'es-ES' : 'en-US'; }
 
 function fmtUSD(n) {
-  return new Intl.NumberFormat(locale(), { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
+  // Todos los activos actuales cotizan en USD, pero la moneda sale del activo
+  // (campo `quote`) por si algún día se añade uno en otra divisa.
+  const cur = asset.quote || 'USD';
+  return new Intl.NumberFormat(locale(), { style: 'currency', currency: cur, maximumFractionDigits: 2 }).format(n);
 }
 function fmtPct(n, digits = 1) {
   return `${n >= 0 ? '+' : ''}${n.toFixed(digits)}%`;
@@ -562,9 +591,10 @@ async function loadSpotPrice() {
   const key = 'mp_spot_' + asset.id;
   const cachedData = getCached(key);
   if (cachedData) return cachedData;
-  // gold-api.com solo cubre metales; petróleo usa Yahoo (último cierre).
+  // gold-api.com solo cubre los 4 metales preciosos (goldApi: true). Petróleo,
+  // cobre, uranio y carbono usan el último cierre de Yahoo.
   // Si el spot falla, NO tumba la página: init() sigue con el último cierre.
-  if (asset.id !== 'oil') {
+  if (asset.goldApi) {
     const url = `https://api.gold-api.com/price/${asset.symbol}`;
     try {
       const data = await fetchRetry(url, 2, 1500);
@@ -1071,7 +1101,7 @@ document.querySelectorAll('.nav-link').forEach(a => {
 const tvBadgeEl = document.getElementById('tvBadge');
 if (tvBadgeEl) tvBadgeEl.textContent = '1 h';
 const pairBadgeEl = document.getElementById('pairBadge');
-if (pairBadgeEl) pairBadgeEl.textContent = `${asset.symbol} / USD`;
+if (pairBadgeEl) pairBadgeEl.textContent = `${asset.symbol} / ${asset.quote || 'USD'}`;
 
 init();
 
