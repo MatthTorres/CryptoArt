@@ -1309,7 +1309,9 @@ async function init() {
 els.themeToggle?.addEventListener('click', () => {
   setTheme(state.theme === 'dark' ? 'light' : 'dark');
 });
-initLangDropdown(() => setLang);
+// Se pasa setLang directamente. Antes era `() => setLang`, que solo devolvia
+// la funcion sin ejecutarla: el menu se cerraba pero el idioma no cambiaba.
+initLangDropdown(setLang);
 
 document.querySelectorAll('.coin-tab').forEach(a => {
   a.classList.toggle('active', a.dataset.pair === pairKey);
