@@ -594,6 +594,13 @@ h1, h2 { font-family: 'Sora', sans-serif; }
   cursor: pointer;
   transition: border-color 0.2s, color 0.2s, transform 0.15s;
 }
+/* La etiqueta del boton «Invertir par» se oculta en pantallas estrechas: el
+   icono ⇄ basta y asi el boton no parte el titulo del par. */
+.invert-label { white-space: nowrap; }
+@media (max-width: 480px) {
+  .invert-label { display: none; }
+}
+
 .invert-btn:hover { border-color: var(--accent); color: var(--text-0); -webkit-text-fill-color: var(--text-0); transform: translateY(-1px); }
 .invert-btn.active {
   background: linear-gradient(135deg, var(--accent), #ffd166);
@@ -784,6 +791,10 @@ h1, h2 { font-family: 'Sora', sans-serif; }
   gap: 16px;
   margin-bottom: 12px;
 }
+/* .trade-side solo agrupa: el grid .trade-grid reparte las tres columnas y
+   cada hijo estira igual. min-width:0 evita que un texto largo (el nombre del
+   activo en inglés o portugués) desborde la columna en lugar de partirse. */
+.trade-side { min-width: 0; }
 .trade-side-title {
   font-family: 'Sora', sans-serif;
   font-size: 0.85rem;

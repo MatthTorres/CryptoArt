@@ -786,18 +786,36 @@ async function loadHomeData() {
     scheduleSegmentPrefetch();
     return;
   }
-  // 2) Sin caché (primera visita): red con timeout + respaldo degradado.
+  // 2) Sin caché (primera visita): red con timeout + respuesta parcial.
   const ids = 'bitcoin,ethereum,solana,ripple,dogecoin';
   const [markets, fngRes, globalRes] = await Promise.all([
-    fetchRetry(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&price_change_percentage=24h,7d&sparkline=false`),
+    fetchMarketsPart(ids),
     fetchRetry('https://api.alternative.me/fng/?limit=1').catch(() => null),
     fetchRetry('https://api.coingecko.com/api/v3/global').catch(() => null),
   ]);
-  if (!Array.isArray(markets) || !markets.length) throw new Error('markets vacío');
+  if (!markets.length) throw new Error('markets vacío');
   const payload = { markets, fng: fngRes && fngRes.data ? fngRes.data[0] : null, global: globalRes && globalRes.data ? globalRes.data : null };
   writeHomeStore(payload);
   applyHomePayload(payload);
   scheduleSegmentPrefetch();
+}
+
+// Mercado para las tarjetas de la portada, con respuesta parcial: CoinGecko es
+// gratis y sin clave, asi que con varios visitantes a la vez puede devolver
+// 429 para algun id. Antes un solo id en fallo hacia fallar la llamada entera
+// y la portada se quedaba vacia aunque los otros cuatro vinieran bien.
+async function fetchMarketsPart(ids) {
+  const wanted = ids.split(',');
+  const found = new Map();
+  for (const id of wanted) {
+    try {
+      const r = await fetchRetry(
+        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd` +
+        `&ids=${id}&price_change_percentage=24h,7d&sparkline=false`);
+      if (Array.isArray(r) && r.length) found.set(id, r[0]);
+    } catch { /* ese id se queda fuera; el resto de la portada se muestra igual */ }
+  }
+  return wanted.map((id) => found.get(id)).filter(Boolean);
 }
 
 function applyHomePayload(payload) {
@@ -818,9 +836,9 @@ async function refreshHomeInBackground() {
   try {
     const ids = 'bitcoin,ethereum,solana,ripple,dogecoin';
     const [markets, fngRes, globalRes] = await Promise.all([
-      fetchRetry(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&price_change_percentage=24h,7d&sparkline=false`, 1),
-      fetchRetry('https://api.alternative.me/fng/?limit=1', 1).catch(() => null),
-      fetchRetry('https://api.coingecko.com/api/v3/global', 1).catch(() => null),
+      fetchMarketsPart(ids),
+      fetchRetry('https://api.alternative.me/fng/?limit=1').catch(() => null),
+      fetchRetry('https://api.coingecko.com/api/v3/global').catch(() => null),
     ]);
     if (!Array.isArray(markets) || !markets.length) return;
     const payload = { markets, fng: fngRes && fngRes.data ? fngRes.data[0] : null, global: globalRes && globalRes.data ? globalRes.data : null };

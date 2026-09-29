@@ -35,15 +35,21 @@ ORIGIN_PATTERNS = [
 
 
 def origin_of(url: str) -> str:
-    """https://host/sub/pag.html -> https://host/sub/  (conserva la subcarpeta)."""
+    """Deduce el origen de una URL que la web declara sobre sí misma.
+
+    Solo se quita el último segmento si parece un fichero (tiene extensión).
+    Si no, es la raíz del sitio o una subcarpeta y se conserva: si no, la URL
+    de la portada (.../MarketPulse/) se interpretaría como origen
+    https://host/ y una ejecución posterior corrompería el resto de URLs.
+    """
     m = re.match(r"^(https://[^/]+)(.*)$", url)
     host, path = m.group(1), m.group(2).rstrip("/")
     if "/assets/" in path:            # url de imagen: se queda con la raíz de assets
         path = path.split("/assets/")[0]
-    elif "/" in path:                 # url de página: quita el último segmento
+    elif path and "." in path.rsplit("/", 1)[-1]:   # url de página: quita el fichero
         path = path.rsplit("/", 1)[0]
-    else:
-        path = ""
+    else:                            # raíz o subcarpeta: ya es el origen
+        path = path
     return host + path + "/"
 
 
@@ -108,6 +114,13 @@ def main() -> int:
         original = txt
         for old in olds:
             txt = txt.replace(old, new)
+        # La portada se canonicaliza contra la raíz, no contra index.html:
+        # si no, /MarketPulse/ y /MarketPulse/index.html serían dos URLs para
+        # el mismo contenido y Google elegiría una.
+        txt = re.sub(r'(rel="canonical" href=")' + re.escape(new) + r'index\.html(")',
+                     r"\1" + new + r"\2", txt)
+        txt = re.sub(r'(property="og:url" content=")' + re.escape(new) + r'index\.html(")',
+                     r"\1" + new + r"\2", txt)
         if txt != original:
             with open(path, "w", encoding="utf-8", newline="") as fh:
                 fh.write(txt)

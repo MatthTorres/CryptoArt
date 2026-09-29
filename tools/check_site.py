@@ -134,7 +134,10 @@ site_urls += re.findall(r"^Sitemap: (\S+)$", read("robots.txt"), re.M)
 site_urls += re.findall(r"<loc>([^<]+)</loc>", read("sitemap.xml"))
 bases = set()
 for u in site_urls:
-    bases.add(re.sub(r"/(assets/[^/]+|[\w.-]+\.html|sitemap\.xml).*$", "", u) + "/")
+    # La portada ya es el origen con barra final: al normalizar se le añadia
+    # otra y contaba como un segundo origen distinto (MarketPulse//).
+    u = u.rstrip("/")
+    bases.add(re.sub(r"/(assets/[^/]+|[\w.-]+\.html|sitemap\.xml)$", "", u) + "/")
 if len(bases) > 1:
     errors.append(f"orígenes mixtos en las URLs absolutas: {sorted(bases)}")
 origin = sorted(bases)[0] if bases else ""
