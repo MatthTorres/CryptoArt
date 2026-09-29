@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 # Prueba si un símbolo de Yahoo tiene historial diario utilizable para el analisis
 # tecnico del dashboard (se necesitan >=64 velas).
-# Uso: python tools/check_yahoo_symbols.py HG=F SRUUF KRBN ...
+# Uso: python tools/check_yahoo_symbols.py HG=F KRBN ...
 
 PROXIES = [
     ("allorigins", "https://api.allorigins.win/raw?url={u}"),

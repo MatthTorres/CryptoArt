@@ -9,7 +9,7 @@ Comprueba, sin abrir navegador:
   4. Que no queden restos de un alta anterior con otro nombre (p. ej. 'EUA'
      cuando el activo ya no usa esa etiqueta).
 
-Uso:  python tools/check_new_asset.py copper uranium carbon
+Uso:  python tools/check_new_asset.py copper carbon
 """
 import re
 import sys
@@ -24,7 +24,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Anadir uno aqui obliga a revisar primero que exista de verdad.
 KNOWN_TV = {
     "OANDA:XAUUSD", "OANDA:XAGUSD", "OANDA:XPTUSD", "OANDA:XPDUSD",
-    "NYMEX:CL1!", "COMEX:HG1!", "OTC:SRUUF", "AMEX:KRBN",
+    "NYMEX:CL1!", "COMEX:HG1!", "AMEX:KRBN",
 }
 
 PROXIES = [

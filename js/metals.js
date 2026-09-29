@@ -1,10 +1,10 @@
 // ==========================================================
 // MarketPulse — Análisis de Metales, Energía y Carbono
-// (Oro, Plata, Platino, Paladio, Petróleo, Cobre, Uranio, Carbono)
+// (Oro, Plata, Platino, Paladio, Petróleo, Cobre, Carbono)
 // Fuentes: Yahoo Finance (vía proxy AllOrigins) para historial + gold-api.com para spot
 // ==========================================================
 
-// ---------- Configuración de activos (8 pestañas) ----------
+// ---------- Configuración de activos (7 pestañas) ----------
 // tv: identificador exacto de TradingView. Los símbolos spot de metales usan el
 // proveedor OANDA (canónico en TradingView); un prefijo inexistente hace que el
 // widget muestre «Este símbolo no existe».
@@ -13,22 +13,22 @@
 // El resto usa el último cierre de Yahoo (loadSpotPrice lo trata como opcional).
 //
 // OJO con los instrumentos, que no son homogéneos entre activos:
-//   - HG=F y COMEX:HG1! son el mismo mercado (cobre del COMEX) en USD por libra.
-//   - SRUUF es un ETF de uranio FÍSICO (Sprott), no el metal al contado: es el
-//     proxy más fiel que publica Yahoo, porque los futuros de uranio U3O8
-//     (COMEX:UX1!, USD por libra) no tienen serie diaria en Yahoo. Por eso el
-//     gráfico de tv usa el MISMO instrumento que las métricas (OTC:SRUUF) y no
-//     UX1!: si se mezclaran, el precio del gráfico no cuadraría con el del panel.
-//   - El carbono tampoco tiene serie de futuros EUA en Yahoo (C2E=F devuelve 7
-//     velas, insuficiente para el análisis técnico), así que se usa KRBN
-//     (KraneShares Global Carbon Strategy ETF, AMEX:KRBN), que sigue el índice
-//     S&P Global Carbon Credit y replica futuros de permisos de emisión reales:
-//     EUA, CCA (California), RGGI, UKA y WCA. Se descartó CARZ porque, pese al
-//     nombre, es un ETF de acciones de la estrategia de carbono, no de los
-//     futuros de allowances, así que sigue las cotizaciones y no el precio del
-//     carbono. Mismo criterio que el uranio: gráfico y métricas sobre el mismo
-//     instrumento para que cuadren.
-//   - Los tres cotizan en USD, así que quote queda sin usar en la configuración
+//   - HG=F y COMEX:HG1! son el mismo mercado (cobre del COMEX) en USD por libra,
+//     así que el gráfico y las métricas se refieren al mismo mercado.
+//   - El carbono no tiene serie de futuros EUA en Yahoo (C2E=F devuelve 7 velas,
+//     insuficiente para el análisis técnico), así que se usa KRBN (KraneShares
+//     Global Carbon Strategy ETF, AMEX:KRBN), que sigue el índice S&P Global
+//     Carbon Credit y replica futuros de permisos de emisión reales: EUA, CCA
+//     (California), RGGI, UKA y WCA. Se descartó CARZ porque, pese al nombre, es
+//     un ETF de acciones de la estrategia de carbono, no de los futuros de
+//     allowances, así que sigue las cotizaciones y no el precio del carbono.
+//   - Por qué NO hay uranio: se retiró por falta de un mercado real que
+//     respaldarlo. El futuro del U3O8 (COMEX:UX1!) tiene volumen 1 y interés
+//     abierto 4, y el "spot price" de TradeTech es un indicador de valoración
+//     publicado, no un mercado donde se compra y vende. El único vehículo con
+//     liquidez era un ETF de uranio físico (SRUUF), pero su precio mide las
+//     acciones del trust, no el metal, y eso confunde a quien lee el panel.
+//   - Los que quedan cotizan en USD, así que quote queda sin usar en la configu
 //     (fmtUSD lo respeta por si algún activo futuro se apoya en otra moneda).
 const ASSETS = {
   gold:      { id: 'gold',      name: 'Oro',          nameEn: 'Gold',      symbol: 'XAU', yahoo: 'GC=F',  tv: 'OANDA:XAUUSD',   goldApi: true },
@@ -37,7 +37,6 @@ const ASSETS = {
   palladium: { id: 'palladium', name: 'Paladio',      nameEn: 'Palladium', symbol: 'XPD', yahoo: 'PA=F',  tv: 'OANDA:XPDUSD',   goldApi: true },
   oil:       { id: 'oil',       name: 'Petróleo WTI', nameEn: 'WTI Oil',   symbol: 'CL',  yahoo: 'CL=F',  tv: 'NYMEX:CL1!' },
   copper:    { id: 'copper',    name: 'Cobre',        nameEn: 'Copper',    symbol: 'HG',  yahoo: 'HG=F',  tv: 'COMEX:HG1!' },
-  uranium:   { id: 'uranium',   name: 'Uranio',       nameEn: 'Uranium',   symbol: 'U',   yahoo: 'SRUUF', tv: 'OTC:SRUUF' },
   carbon:    { id: 'carbon',    name: 'Carbono',      nameEn: 'Carbon',    symbol: 'CO2', yahoo: 'KRBN',  tv: 'AMEX:KRBN' },
 };
 
@@ -592,7 +591,7 @@ async function loadSpotPrice() {
   const cachedData = getCached(key);
   if (cachedData) return cachedData;
   // gold-api.com solo cubre los 4 metales preciosos (goldApi: true). Petróleo,
-  // cobre, uranio y carbono usan el último cierre de Yahoo.
+  // cobre y carbono usan el último cierre de Yahoo.
   // Si el spot falla, NO tumba la página: init() sigue con el último cierre.
   if (asset.goldApi) {
     const url = `https://api.gold-api.com/price/${asset.symbol}`;

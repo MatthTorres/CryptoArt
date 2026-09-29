@@ -5,9 +5,10 @@ Plataforma web de **análisis diario multi-activo (cripto, metales y divisas)** 
 ## ✨ Características
 
 - **Cripto**: BTC, ETH, SOL, XRP y DOGE — cada uno con su análisis completo.
-- **Metales, energía y carbono**: Oro, Plata, Platino, Paladio, Petróleo WTI, Cobre, Uranio y Carbono.
-  - **Nota sobre los tres nuevos activos**: el Cobre usa su futuro real (`HG=F`, USD por libra). El Uranio y el Carbono se analizan y miden con un ETF porque **Yahoo Finance no publica serie diaria ni de los futuros de uranio U3O8 ni de los permisos de emisión (EUA)**: `C2E=F` devuelve solo 7 velas (insuficiente para RSI/SMA/MACD) y `COMEX:UX1!`/`ICEENDEX:ECF1!` solo existen en TradingView. Se usa por eso `SRUUF` (Sprott Physical Uranium Trust, uranio físico) y `KRBN` (KraneShares Global Carbon Strategy ETF, que replica futuros reales de permisos de emisión: EUA, CCA, RGGI, UKA y WCA), ambos con 6 meses de historial verificado. El gráfico de TradingView muestra el **mismo** instrumento que las métricas (`OTC:SRUUF`, `AMEX:KRBN`), no el futuro, para que el precio del gráfico cuadre con el del panel. ⚠️ No confundir `CARZ` con un ETF de carbono: es un ETF de **acciones** de la estrategia de carbono, así que sigue cotizaciones, no el precio del carbono.
+- **Metales, energía y carbono**: Oro, Plata, Platino, Paladio, Petróleo WTI, Cobre y Carbono.
+  - **Nota sobre los dos nuevos activos**: el Cobre usa su futuro real (`HG=F`, USD por libra). El Carbono se analiza con `KRBN` (KraneShares Global Carbon Strategy ETF) porque **Yahoo Finance no publica serie diaria de los permisos de emisión (EUA)**: `C2E=F` devuelve solo 7 velas (insuficiente para RSI/SMA/MACD) y `ICEENDEX:ECF1!` solo existe en TradingView. `KRBN` sí replica futuros reales de permisos de emisión (EUA, CCA, RGGI, UKA y WCA) y tiene 6 meses de historial verificado. El gráfico de TradingView muestra el **mismo** instrumento que las métricas (`AMEX:KRBN`), para que el precio del gráfico cuadre con el del panel. ⚠️ No confundir `CARZ` con un ETF de carbono: es un ETF de **acciones** de la estrategia de carbono, así que sigue cotizaciones, no el precio del carbono.
   - **Por qué no está el grafeno** (decidido el 28/09/2026): el grafeno no tiene precio de mercado. No existe futuro, spot ni índice, y Yahoo Finance no publica ningún símbolo (`GRAPHENE`, `GRAPH` y `GOEV` devuelven «no data»; `GPH` devuelve 0 velas). Lo único cotizado son microcapitals de grafeno en OTCQB sin ingresos reales frente a su capitalización (`FGPHF`: 537 K de ingresos sobre 34,7 M de cap; `GMGMF`: 414 K sobre 222 M), cuyo precio mide la cotización de la empresa, no el del material. Meterlas en el panel daría un RSI y un MACD aparentemente de mercado sobre un valor que no es el grafeno, así que se excluyen a propósito. Si algún día existe un futuro o un índice de referencia, se añade como activo normal con su `yahoo` y su `tv` verificados (ver `tools/check_new_asset.py`).
+  - **Por qué no está el uranio** (retirado el 28/09/2026, tras estar unos días en producción): no hay un mercado real que lo respalde. El futuro del U3O8 (`COMEX:UX1!`) tiene volumen 1 y interés abierto 4, y el «spot price» de TradeTech es un indicador de valoración publicado (promedio de transacciones, ofertas y bids para lotes de 2 millones de libras), no un mercado donde se compra y vende. Lo único con liquidez era `SRUUF`, un ETF de uranio físico, pero su precio mide **las acciones del trust, no el metal**: el panel habría mostrado un RSI y un MACD que parecen de commodity y no lo eran. Se retiró para no confundir a quien lo lee. Si algún día hay un futuro líquido o un índice de referencia, se reincorpora con `yahoo` y `tv` verificados.
 - **Divisas**: EUR/USD, GBP/USD, USD/JPY, USD/COP y USD/MXN, con botón **⇄ de inversión** para verlos al revés (USD/EUR, USD/GBP, JPY/USD, COP/USD, MXN/USD).
 - **Análisis fundamental**: sentimiento de mercado, variaciones 24h/7d, índice Miedo & Codicia y capitalización.
 - **Análisis técnico**: RSI(14), medias móviles SMA20/SMA50 y MACD calculados en el navegador sobre 90 días de historial.
@@ -24,7 +25,7 @@ Plataforma web de **análisis diario multi-activo (cripto, metales y divisas)** 
 ```
 ├── index.html        # Home con resumen del mercado (cripto + accesos metales/forex)
 ├── analysis.html     # Análisis cripto ( ?coin=bitcoin|ethereum|solana|ripple|dogecoin )
-├── metals.html       # Análisis metales/energía/carbono ( ?asset=gold|silver|platinum|palladium|oil|copper|uranium|carbon )
+├── metals.html       # Análisis metales/energía/carbono ( ?asset=gold|silver|platinum|palladium|oil|copper|carbon )
 ├── forex.html        # Análisis divisas ( ?pair=eurusd|gbpusd|usdjpy|usdcop|usdmxn [&inv=1 invierte] )
 ├── about.html        # Sobre nosotros
 ├── legal.html        # Políticas de uso y liberación de responsabilidad
@@ -130,7 +131,7 @@ Detalles según el host:
 | Sección | Símbolos |
 | --- | --- |
 | Cripto (`js/app.js`) | `BINANCE:BTCUSDT`, `ETHUSDT`, `SOLUSDT`, `XRPUSDT`, `DOGEUSDT` |
-| Metales (`js/metals.js`) | `OANDA:XAUUSD`, `OANDA:XAGUSD`, `OANDA:XPTUSD`, `OANDA:XPDUSD`, `NYMEX:CL1!`, `COMEX:HG1!`, `OTC:SRUUF`, `AMEX:KRBN` |
+| Metales (`js/metals.js`) | `OANDA:XAUUSD`, `OANDA:XAGUSD`, `OANDA:XPTUSD`, `OANDA:XPDUSD`, `NYMEX:CL1!`, `COMEX:HG1!`, `AMEX:KRBN` |
 | Divisas (`js/forex.js`) | `OANDA:EURUSD`, `OANDA:GBPUSD`, `OANDA:USDJPY`, `OANDA:USDMXN`, `FX_IDC:USDCOP` (invertidos: `FX_IDC:USDEUR`, `USDGBP`, `JPYUSD`, `COPUSD`, `MXNUSD`) |
 
 Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publica ese activo en TradingView: verifica el prefijo correcto (`OANDA`, `FX_IDC` = datos de ICE, `NYMEX`, `BINANCE`) en `https://www.tradingview.com/symbols/<SÍMBOLO>/`.
@@ -163,8 +164,8 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 ## 🧾 Políticas de uso y versión
 
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
-- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.5.1**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`, y cada HTML lleva el mismo `vX.Y.Z` como respaldo por si el navegador no ejecuta JS.
-- **Cache-bust en uso**: `css/style.css?v=9`, `js/version.js?v=13`, `js/site.js?v=16`, `js/app.js?v=15`, `js/metals.js?v=16`, `js/forex.js?v=17`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
+- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.6.1**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`, y cada HTML lleva el mismo `vX.Y.Z` como respaldo por si el navegador no ejecuta JS.
+- **Cache-bust en uso**: `css/style.css?v=9`, `js/version.js?v=13`, `js/site.js?v=17`, `js/app.js?v=15`, `js/metals.js?v=17`, `js/forex.js?v=17`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
 - **Pie de página unificado**: las 6 páginas cierran con las mismas dos líneas (versión con `data-app-version` y copyright con `data-app-year`) y con **dos enlaces que nunca apuntan a la página actual**: `index/analysis/metals/forex` → políticas + *Sobre nosotros*, `about` → políticas + *Inicio*, `legal` → *Inicio* + *Sobre nosotros*. La primera línea de `index/analysis/metals/forex/about` es el sello de datos de mercado (`footerPrefix` + `#updateTime`), que `js/version.js` rellena al cargar y el JS de cada sección sustituye después por la hora real del último dato; `legal.html` no muestra hora y usa la línea de marca (`footerBrandLine`) porque no tiene datos de mercado.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
 - **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.
