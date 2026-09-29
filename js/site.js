@@ -1,8 +1,29 @@
 // ==========================================================
 // MarketPulse — JS compartido: Home (index.html), Sobre nosotros (about.html)
-// y Políticas de uso (legal.html). Tema oscuro/claro, idioma ES/EN y
+// y Políticas de uso (legal.html). Tema oscuro/claro, idioma ES/EN/PT y
 // datos del mercado para el home. La versión vive en js/version.js.
 // ==========================================================
+
+// Idiomas soportados. `locale` es el BCP-47 para números y fechas: el_pt-BR es
+// el que espera un lector brasileño (R$ 1.234,56 y 28/09/2026).
+const LANGS = [
+  { code: 'es', btn: 'ES', locale: 'es-ES' },
+  { code: 'en', btn: 'EN', locale: 'en-US' },
+  { code: 'pt', btn: 'PT', locale: 'pt-BR' },
+];
+// Antes el código era binario (`lang === 'en' ? EN : ES`). Con tres idiomas eso
+// devuelve inglés para cualquier idioma que no sea español, así que PT
+// acabaría hablando inglés. Estos helpers son la única fuente de verdad.
+function loc(tag) {
+  const hit = LANGS.find(l => l.code === tag);
+  return hit ? hit.locale : 'es-ES';
+}
+// Nombre localizado de un activo con campos name / nameEn / namePt.
+function pickName(item) {
+  if (state.lang === 'en' && item.nameEn) return item.nameEn;
+  if (state.lang === 'pt' && item.namePt) return item.namePt;
+  return item.name;
+}
 
 const I18N = {
   es: {
@@ -116,6 +137,118 @@ const I18N = {
     legalIpText: 'El nombre MarketPulse, su logo, sus textos y el código de análisis pertenecen a sus autores. Puedes compartir enlaces a la plataforma citando la fuente, pero no copiar ni clonar el sitio completo con fines comerciales sin autorización.',
     legalContactTitle: '7. Contacto y cambios',
     legalContactText: 'Estas políticas pueden actualizarse con cada versión del programa (consulta el número de versión en el pie de página). El uso continuado de la plataforma implica la aceptación de la versión vigente.',
+  },
+  pt: {
+    homeTitle: 'MarketPulse — Início',
+    aboutTitle: 'MarketPulse — Sobre nós',
+    homeTagline: 'Cripto · Metais · Forex — Fundamental + Técnico',
+    navHome: 'Início',
+    navAnalysis: 'Cripto',
+    navMetals: 'Metais',
+    navForex: 'Câmbio',
+    navAbout: 'Sobre nós',
+    footerPrefix: 'MarketPulse · Dados de mercado em tempo real · Atualizado:',
+    footerLegal: 'Políticas de uso e responsabilidade',
+    footerVersion: 'Versão',
+    footerRights: 'Todos os direitos reservados.',
+    footerBrandLine: 'MarketPulse · Análise multiactive: cripto, metais e câmbio',
+    errorTitle: 'MarketPulse — Página não encontrada',
+    errorHeading: 'Página não encontrada',
+    errorText: 'O endereço acessado não existe ou mudou. Volte ao início para seguir a análise diária de cripto, metais e câmbio.',
+    errorCta: 'Ir para o início →',
+    legalTitle: 'MarketPulse — Políticas de uso e Isenção de Responsabilidade',
+    homeLoading: 'Carregando dados do mercado…',
+    homeOk: 'Dados atualizados com sucesso.',
+    homeError: '⚠️ Não foi possível carregar os dados do mercado (limite da API possível). Clique em Tentar novamente em alguns segundos.',
+    retry: 'Tentar novamente',
+    homeHeroCrypto: 'O pulso do mercado cripto hoje',
+    homeHeroMetals: 'O pulso do mercado de metais hoje',
+    homeHeroForex: 'O pulso do mercado de câmbio hoje',
+    heroPause: 'Pausar a rotação automática',
+    heroPlay: 'Retomar a rotação automática',
+    marketFearGreed: 'Índice de Medo/Ganância',
+    marketCap: 'Cap. de mercado total',
+    marketDominance: 'Dominância do BTC',
+    coinsTitle: 'Escolha uma cripto para analisar',
+    metalsTitle: 'Escolha um metal ou energia para analisar',
+    metalsDesc: 'Cobertura à vista com visão fundamental, leitura técnica, probabilidades de alta/baixa, faixa estimada do dia e recomendação profissional.',
+    metalGold: 'O metal refúgio por excelência.',
+    metalSilver: 'Industrial e refúgio ao mesmo tempo.',
+    metalPlatinum: 'Usado em catalisadores e joalheria.',
+    metalPalladium: 'O metal mais raro entre os preciosos.',
+    metalOil: 'A matéria-prima energética mais negociada.',
+    metalCopper: 'O metal industrial da eletrificação.',
+    metalCarbon: 'A transição energética, medida pelo mercado.',
+    forexTitle: 'Escolha um ativo Forex para analisar',
+    forexDesc: 'Cotações do mercado de câmbio com visão fundamental, leitura técnica, probabilidades de alta/baixa, faixa estimada do dia e recomendação profissional.',
+    forexCardEUR: 'A moeda mais negociada do mundo.',
+    forexCardGBP: 'Alta liquidez, sensível aos juros.',
+    forexCardJPY: 'Refúgio clássico na Ásia.',
+    forexCardCOP: 'Câmbio local USD/COP.',
+    forexCardMXN: 'Câmbio local USD/MXN.',
+    coinsDesc: 'Cada análise inclui visão fundamental, visão técnica, probabilidades de alta/baixa, faixa estimada do dia e recomendação profissional.',
+    btnAnalysis: 'Ver análise completa →',
+    weekPrefix: 'Em 7 dias:',
+    summarySentiment: 'O sentimento do mercado hoje é {fng} ({fngVal}/100).',
+    summaryLeaders: 'Líderes do dia: {list}.',
+    summaryLaggards: 'Mais pressionados hoje: {list}.',
+    segCrypto: 'cripto',
+    segMetals: 'metais e energia',
+    segForex: 'câmbio',
+    segToneUp: 'Em média, {n} ativos de {seg} operam em alta nas últimas 24 horas.',
+    segToneFlat: 'Os {n} ativos de {seg} estão de lado, sem tendência clara nas últimas 24 horas.',
+    segToneDown: 'Em média, os {n} ativos de {seg} operam em baixa nas últimas 24 horas.',
+    statBest: 'Melhor do dia',
+    statWorst: 'Pior do dia',
+    statAvg: 'Média 24h',
+    segLoading: 'Atualizando os dados deste mercado…',
+    segUnavailable: 'Neste momento não há dados disponíveis para este mercado.',
+    trendUpStrong: 'Forte impulso comprador nas últimas 24 horas.',
+    trendUp: 'Tendência de alta moderada no dia.',
+    trendFlat: 'Consolidação / movimento lateral durante o dia.',
+    trendDown: 'Queda moderada nas últimas 24 horas.',
+    trendDownStrong: 'Forte queda durante o dia — possível sobrevenda.',
+    aboutHeroTitle: 'Sobre o MarketPulse',
+    aboutHeroText: 'O MarketPulse é uma plataforma de análise multiactive que combina dados de mercado em tempo real com indicadores estatísticos para oferecer, todos os dias, uma leitura clara do que pode acontecer com as principais criptomoedas, metais e moedas.',
+    aboutMissionTitle: 'A nossa missão',
+    aboutMissionText: 'Democratizar a análise financeira: traduzir indicadores complexos de cripto, metais e Forex em probabilidades e faixas fáceis de entender, para que qualquer pessoa possa tomar decisões informadas e gerir o seu risco.',
+    aboutHowTitle: 'O que cada análise inclui',
+    aboutHow1: 'Análise fundamental: variações de 24h/7d/30d, sentimento de mercado, volume e capitalização (conforme o ativo).',
+    aboutHow2: 'Leitura técnica: tendência, momentum e volatilidade calculados sobre o histórico recente de cada ativo.',
+    aboutHow3: 'Probabilidade de alta e de baixa para cada análise e uma probabilidade combinada ponderada.',
+    aboutHow4: 'Faixa estimada de oscilação do dia: cenários de alta/baixa e preço esperado no fechamento.',
+    aboutHow5: 'Recomendação profissional combinada (compra / manutenção / venda) com gráficos diários e em tempo real.',
+    aboutVerticalsTitle: 'Três mercados, uma metodologia',
+    aboutVerticalCrypto: 'Cripto: Bitcoin, Ethereum, Solana, XRP e Dogecoin, com preço, capitalização, volume e sentimento de mercado.',
+    aboutVerticalMetals: 'Metais, energia e carbono: Ouro, Prata, Platina, Paládio, Petróleo WTI, Cobre e Carbono, com preço e variação do dia.',
+    aboutVerticalForex: 'Câmbio: EUR/USD, GBP/USD, USD/JPY, USD/COP e USD/MXN, com cotação ao vivo e variação do dia.',
+    aboutSourcesTitle: 'Transparência e privacidade',
+    aboutSourcesText: 'Trabalhamos com fornecedores de dados de mercado reconhecidos e renovamos as informações continuamente.',
+    aboutRiskTitle: 'Aviso de risco',
+    aboutRiskText: 'O MarketPulse não presta consultoria financeira. As estimativas são geradas automaticamente a partir de modelos estatísticos e dados públicos, e não garantem resultados. Cripto, metais e câmbio são ativos voláteis: nunca invista mais do que pode perder e use sempre stop-loss.',
+    aboutRiskLink: 'Consulte as políticas de uso e isenção de responsabilidade.',
+    legalHeroTitle: 'Políticas de uso e Isenção de Responsabilidade',
+    legalHeroText: 'Condições de uso do MarketPulse: o que a plataforma oferece, o que não oferece e quais são as suas responsabilidades como utilizador.',
+    legalUpdated: 'Última atualização:',
+    legalVersion: 'Versão do programa:',
+    legalSummaryTitle: 'Resumo rápido',
+    legalSummaryText: 'O MarketPulse é uma ferramenta informativa e educativa. Não é consultoria financeira, não gere o seu dinheiro e não garante resultados. Os dados vêm de terceiros e podem falhar. Cada decisão de investimento é sua e sob a sua responsabilidade.',
+    legalUseTitle: '1. Uso permitido',
+    legalUseText: 'O MarketPulse é uma ferramenta informativa de análise multiactive (criptomoedas, metais, energia e câmbio). Pode consultar livremente as análises, probabilidades, faixas estimadas e gráficos para fins educativos e de investigação pessoal.',
+    legalMisuseTitle: '2. Uso não permitido',
+    legalMisuse1: 'Não usar a plataforma para prestar consultoria financeira a terceiros como se fosse uma recomendação profissional certificada.',
+    legalMisuse2: 'Não redistribuir automaticamente os dados com scraping massivo que degrada o serviço ou afeta os fornecedores de dados.',
+    legalMisuse3: 'Não tentar alterar, descompilar ou imitar a identidade visual do MarketPulse.',
+    legalRiskTitle: '3. Isenção de responsabilidade',
+    legalRiskText: 'O MarketPulse não presta consultoria financeira, não gere fundos e não garante resultados. As análises, probabilidades e faixas são geradas automaticamente a partir de modelos estatísticos e dados públicos de terceiros, e podem conter erros, atrasos ou interrupções. Toda a decisão de investimento é tomada por si sob o seu próprio risco.',
+    legalVolTitle: '4. Risco dos ativos',
+    legalVolText: 'As criptomoedas, os metais, a energia e as moedas são ativos voláteis e implicam risco de perda parcial ou total do capital, incluindo alavancagem, saltos de preço e eventos geopolíticos. Nunca invista mais do que pode perder e use sempre gestão de risco (stop-loss, diversificação).',
+    legalDataTitle: '5. Dados e disponibilidade',
+    legalDataText: 'A informação vem de fornecedores externos de dados de mercado, pelo que pode haver atrasos, interrupções ou diferenças face a outras fontes, alheias ao MarketPulse. Os cálculos são executados no seu navegador e apenas as suas preferências (tema, idioma e cache) são guardadas localmente; não operamos servidores que armazenem a sua informação pessoal.',
+    legalIpTitle: '6. Propriedade intelectual',
+    legalIpText: 'O nome MarketPulse, o seu logótipo, os seus textos e o código de análise pertencem aos seus autores. Pode partilhar links para a plataforma citando a fonte, mas não copiar nem clonar o site completo para fins comerciais sem autorização.',
+    legalContactTitle: '7. Contacto e alterações',
+    legalContactText: 'Estas políticas podem ser atualizadas a cada versão do programa (consulte o número da versão no rodapé). A utilização continuada da plataforma implica a aceitação da versão vigente.',
   },
   en: {
     homeTitle: 'MarketPulse — Home',
@@ -234,7 +367,12 @@ const I18N = {
 // ---------- Estado de preferencias (compartido con la app de análisis) ----------
 const state = {
   theme: localStorage.getItem('btc-theme') || 'dark',
-  lang: localStorage.getItem('btc-lang') || 'es',
+  // Se valida contra LANGS: un valor antiguo o manipulado en localStorage
+  // (p. ej. 'pt-BR' de una versión previa) caería en un idioma sin diccionario.
+  lang: (() => {
+    const saved = localStorage.getItem('btc-lang');
+    return LANGS.some(l => l.code === saved) ? saved : 'es';
+  })(),
   statusKey: 'homeLoading',
 };
 
@@ -244,7 +382,7 @@ function t(key) {
   return (I18N[state.lang] && I18N[state.lang][key]) || I18N.es[key] || key;
 }
 
-function locale() { return state.lang === 'es' ? 'es-ES' : 'en-US'; }
+function locale() { return loc(state.lang); }
 
 function fmtUSD(n) {
   return new Intl.NumberFormat(locale(), { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
@@ -274,10 +412,12 @@ function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.getAttribute('data-i18n'));
   });
-  const langEs = document.getElementById('langEs');
-  const langEn = document.getElementById('langEn');
-  if (langEs) langEs.classList.toggle('active', state.lang === 'es');
-  if (langEn) langEn.classList.toggle('active', state.lang === 'en');
+  // Un botón por idioma: el marcado se genera desde LANGS para que añadir un
+  // idioma no obligue a tocar los 7 HTML.
+  LANGS.forEach(l => {
+    const btn = document.getElementById('lang' + l.code.toUpperCase());
+    if (btn) btn.classList.toggle('active', state.lang === l.code);
+  });
   const st = document.getElementById('statusText');
   if (st) st.textContent = t(state.statusKey);
   // Navegación activa según la página
@@ -300,9 +440,15 @@ function setLang(lang) {
 }
 
 // ---------- Traducciones del sentimiento Fear & Greed ----------
+// El API de alternative.me devuelve las etiquetas en inglés; cada idioma tiene
+// su propio mapa en vez de un ternario, porque PT no puede caer en el inglés.
+const FNG_MAP = {
+  es: { 'Extreme Fear': 'Miedo extremo', 'Fear': 'Miedo', 'Neutral': 'Neutral', 'Greed': 'Codicia', 'Extreme Greed': 'Codicia extrema' },
+  pt: { 'Extreme Fear': 'Medo extremo', 'Fear': 'Medo', 'Neutral': 'Neutro', 'Greed': 'Ganância', 'Extreme Greed': 'Ganância extrema' },
+  en: {},
+};
 function translateFng(label) {
-  if (state.lang === 'en') return label;
-  const map = { 'Extreme Fear': 'Miedo extremo', 'Fear': 'Miedo', 'Neutral': 'Neutral', 'Greed': 'Codicia', 'Extreme Greed': 'Codicia extrema' };
+  const map = FNG_MAP[state.lang] || FNG_MAP.es;
   return map[label] || label;
 }
 
@@ -385,20 +531,20 @@ const SEGMENT_HOSTS = ['https://query1.finance.yahoo.com', 'https://query2.finan
 // combinación con 1 intento y avanza en cuanto una falla, sin pausas.
 const SEGMENT_QUOTES = {
   metals: [
-    { yahoo: 'GC=F', es: 'Oro', en: 'Gold' },
-    { yahoo: 'SI=F', es: 'Plata', en: 'Silver' },
-    { yahoo: 'PL=F', es: 'Platino', en: 'Platinum' },
-    { yahoo: 'PA=F', es: 'Paladio', en: 'Palladium' },
-    { yahoo: 'CL=F', es: 'Petróleo', en: 'Oil' },
-    { yahoo: 'HG=F', es: 'Cobre', en: 'Copper' },
-    { yahoo: 'KRBN', es: 'Carbono', en: 'Carbon' },
+    { yahoo: 'GC=F', es: 'Oro', en: 'Gold', pt: 'Ouro' },
+    { yahoo: 'SI=F', es: 'Plata', en: 'Silver', pt: 'Prata' },
+    { yahoo: 'PL=F', es: 'Platino', en: 'Platinum', pt: 'Platina' },
+    { yahoo: 'PA=F', es: 'Paladio', en: 'Palladium', pt: 'Paládio' },
+    { yahoo: 'CL=F', es: 'Petróleo', en: 'Oil', pt: 'Petróleo' },
+    { yahoo: 'HG=F', es: 'Cobre', en: 'Copper', pt: 'Cobre' },
+    { yahoo: 'KRBN', es: 'Carbono', en: 'Carbon', pt: 'Carbono' },
   ],
   forex: [
-    { yahoo: 'EURUSD=X', es: 'EUR/USD', en: 'EUR/USD' },
-    { yahoo: 'GBPUSD=X', es: 'GBP/USD', en: 'GBP/USD' },
-    { yahoo: 'JPY=X', es: 'USD/JPY', en: 'USD/JPY' },
-    { yahoo: 'COP=X', es: 'USD/COP', en: 'USD/COP' },
-    { yahoo: 'MXN=X', es: 'USD/MXN', en: 'USD/MXN' },
+    { yahoo: 'EURUSD=X', es: 'EUR/USD', en: 'EUR/USD', pt: 'EUR/USD' },
+    { yahoo: 'GBPUSD=X', es: 'GBP/USD', en: 'GBP/USD', pt: 'GBP/USD' },
+    { yahoo: 'JPY=X', es: 'USD/JPY', en: 'USD/JPY', pt: 'USD/JPY' },
+    { yahoo: 'COP=X', es: 'USD/COP', en: 'USD/COP', pt: 'USD/COP' },
+    { yahoo: 'MXN=X', es: 'USD/MXN', en: 'USD/MXN', pt: 'USD/MXN' },
   ],
 };
 
@@ -482,7 +628,9 @@ async function loadSegmentQuotes(key) {
   return seg;
 }
 
-function quoteLabel(q) { return state.lang === 'en' ? q.en : q.es; }
+// Nombre del ticker en el idioma activo, con español como respaldo si el
+// idioma no trae la etiqueta (p. ej.Cotizaciones que son solo un par).
+function quoteLabel(q) { return q[state.lang] || q.es; }
 
 function addStatRow(container, name, value, cls = 'neutral') {
   const row = document.createElement('div');
@@ -856,8 +1004,11 @@ function initSite() {
   applyTheme();
 
   document.getElementById('themeToggle')?.addEventListener('click', () => setTheme(state.theme === 'dark' ? 'light' : 'dark'));
-  document.getElementById('langEs')?.addEventListener('click', () => setLang('es'));
-  document.getElementById('langEn')?.addEventListener('click', () => setLang('en'));
+  // Los botones se enlazan desde LANGS: añadir un idioma al array los activa en
+  // los 7 HTML sin tocar este fichero ni las páginas.
+  LANGS.forEach(l => {
+    document.getElementById('lang' + l.code.toUpperCase())?.addEventListener('click', () => setLang(l.code));
+  });
 
   applyLang();
   stampVersionFooter();

@@ -5,7 +5,7 @@
 // Al publicar una versión nueva, cambia solo APP_VERSION aquí.
 // ==========================================================
 
-const APP_VERSION = '3.6.1'; // Se retira el Uranio del selector: el futuro U3O8 no tiene liquidez (volumen 1) y el unico vehiculo con serie diaria era un ETF cuyo precio no es el del metal, asi que confundia. Quedan 7 activos
+const APP_VERSION = '3.7.0'; // Portugues (pt-BR) como tercer idioma en las 7 paginas: 367 claves traducidas, locales por idioma y boton PT; site v18, app v18, metals v18, forex v18
 const APP_RELEASE = {
   es: '28 de septiembre de 2026',
   en: 'September 28, 2026',

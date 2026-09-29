@@ -39,17 +39,7 @@ def main():
         ms, kb, err, _ = get(prefix + target)
         print(f"  {name:<15} {'OK ' if not err else 'ERR'} {ms:>6}ms {kb/1024:>5.1f}kb {err or ''}")
 
-    print("\n== Stooq como 2a fuente de historial (CSV diario) ==")
-    for sym in ["xptusd", "xauusd", "xagusd", "xpdusd"]:
-        ms, kb, err, body = get(f"https://stooq.com/q/d/l/?s={sym}&i=d")
-        head = body.decode("utf-8", "replace").strip().splitlines()
-        rows = len(head) - 1 if head and head[0].lower().startswith("date") else 0
-        last = head[-1][:48] if rows else ""
-        print(f"  {sym:<8} {'OK ' if not err else 'ERR'} {ms:>6}ms filas={rows:<5} {err or last}")
-
-
-def main():
-    print("== contenido real de Stooq (que devuelve?) ==")
+    print("\n== contenido real de Stooq (que devuelve?) ==")
     for sym in ["xptusd", "xauusd", "pl.f", "xpt"]:
         ms, kb, err, body = get(f"https://stooq.com/q/d/l/?s={sym}&i=d")
         txt = body.decode("utf-8", "replace").strip()

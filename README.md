@@ -18,7 +18,7 @@ Plataforma web de **análisis diario multi-activo (cripto, metales y divisas)** 
 - **Gráficos**: evolución diaria de90 días con medias móviles (Chart.js) + gráfico en tiempo real de1 min (TradingView).
 - **Home** con resumen general del mercado, titular rotatorio (cripto → metales → divisas, cada 30 s de inactividad: cualquier interacción del usuario lo pospone) y botones a cada activo. El resumen y las estadísticas **acompañan al titular**: cambian entre datos de cripto, metales o divisas según el título visible.
 - **Sobre nosotros** con metodología y aviso de riesgo.
-- **Responsive**, tema oscuro/claro e idioma ES/EN (persistidos en `localStorage`).
+- **Responsive**, tema oscuro/claro e idioma **ES / EN / PT-BR** (persistido en `localStorage`). El idioma se elige con un array `LANGS` en `js/site.js` y los botones de los 7 HTML: añadir un cuarto idioma es añadir una entrada al array, su diccionario y el botón, sin tocar la lógica de las páginas. Los números y fechas usan el locale del idioma activo (`pt-BR` → `1.234,56` y `28/09/2026`).
 
 ## 📄 Estructura
 
@@ -39,7 +39,7 @@ Plataforma web de **análisis diario multi-activo (cripto, metales y divisas)** 
 ├── robots.txt        # Permiso a rutas + URL del sitemap
 ├── sitemap.xml       # Las 6 páginas indexables
 ├── _headers          # Caché y seguridad (Netlify/Cloudflare Pages; el resto lo ignora)
-├── tools/            # make_social_image.py · set_site_origin.py · check_site.py
+├── tools/            # check_site.py · check_i18n.py · check_new_asset.py · check_yahoo_symbols.py · set_site_origin.py · perf_all.py · time_metals.py · time_forex.py · make_social_image.py
 ├── assets/og-marketpulse.png     # Imagen social 1200×630 (Open Graph)
 ├── assets/apple-touch-icon.png   # Icono 180×180 para pantalla de inicio
 └── assets/logo-marketpulse.svg   # Logo global
@@ -165,7 +165,7 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
 - **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.6.1**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`, y cada HTML lleva el mismo `vX.Y.Z` como respaldo por si el navegador no ejecuta JS.
-- **Cache-bust en uso**: `css/style.css?v=9`, `js/version.js?v=13`, `js/site.js?v=17`, `js/app.js?v=15`, `js/metals.js?v=17`, `js/forex.js?v=17`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
+- **Cache-bust en uso**: `css/style.css?v=9`, `js/version.js?v=13`, `js/site.js?v=18`, `js/app.js?v=18`, `js/metals.js?v=18`, `js/forex.js?v=18`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
 - **Pie de página unificado**: las 6 páginas cierran con las mismas dos líneas (versión con `data-app-version` y copyright con `data-app-year`) y con **dos enlaces que nunca apuntan a la página actual**: `index/analysis/metals/forex` → políticas + *Sobre nosotros*, `about` → políticas + *Inicio*, `legal` → *Inicio* + *Sobre nosotros*. La primera línea de `index/analysis/metals/forex/about` es el sello de datos de mercado (`footerPrefix` + `#updateTime`), que `js/version.js` rellena al cargar y el JS de cada sección sustituye después por la hora real del último dato; `legal.html` no muestra hora y usa la línea de marca (`footerBrandLine`) porque no tiene datos de mercado.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.
 - **Fecha de la política**: `APP_RELEASE` en `js/version.js`, en español e inglés.

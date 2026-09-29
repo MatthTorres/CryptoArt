@@ -6,6 +6,9 @@
 // ---------- Configuración de pares (5 pestañas) ----------
 // tv: identificador exacto de TradingView. USD/COP solo existe con el proveedor
 // ICE (FX_IDC), no con OANDA; un símbolo inexistente muestra «Este símbolo no existe».
+const LOC_BY_LANG = { es: 'es-ES', en: 'en-US', pt: 'pt-BR' };
+const TV_LANG = { es: 'es', en: 'en', pt: 'pt' };
+
 const PAIRS = {
   eurusd:  { id: 'eurusd',  name: 'Euro / Dólar',   nameEn: 'Euro / US Dollar',    symbol: 'EURUSD', yahoo: 'EURUSD=X', tv: 'OANDA:EURUSD' },
   usdcop:  { id: 'usdcop',  name: 'Dólar / Peso COP', nameEn: 'US Dollar / Colombian Peso', symbol: 'USDCOP', yahoo: 'COP=X',    tv: 'FX_IDC:USDCOP' },
@@ -37,6 +40,7 @@ const els = {
   themeToggle: document.getElementById('themeToggle'),
   langEs: document.getElementById('langEs'),
   langEn: document.getElementById('langEn'),
+  langPt: document.getElementById('langPt'),
   fundBadge: document.getElementById('fundBadge'),
   fundMetrics: document.getElementById('fundMetrics'),
   fundUp: document.getElementById('fundUp'),
@@ -155,6 +159,94 @@ const I18N = {
     tradeRR: 'Ratio beneficio / riesgo',
     tradeNote: 'Tres perfiles para la operación de hoy según tu tolerancia al riesgo. Conservador: espera un retroceso, stop estrecho para arriesgar poco por operación y salida temprana. Medio: retroceso leve, stop estándar y salida en el extremo estimado del día. Arriesgado: entrada a mercado, stop amplio que aguanta el ruido y salida en extensión. Niveles estadísticos; no es asesoría financiera.',
   },
+  pt: {
+    invertPair: 'Inverter par',
+    invertTo: 'Ver {symbol}',
+    statusRetrying: 'Ligação lenta, a tentar novamente automaticamente…',
+    statusOffline: '⚠️ Sem ligação aos dados de mercado. A tentar novamente em segundo plano…',
+    docTitle: 'MarketPulse — Análise de {coin}',
+    tagline: 'Análise diária de câmbio',
+    priceLabel: 'Último fecho diário',
+    statusLoading: 'Carregando dados do mercado em tempo real…',
+    statusLoadingCoin: 'Carregando dados de {coin}…',
+    statusOk: 'Análise atualizada com sucesso.',
+    chartUnavailable: 'Não foi possível carregar o gráfico de evolução. O resto da análise é válido.',
+    tvUnavailable: 'Não foi possível carregar o gráfico em tempo real. Verifique a sua ligação.',
+    retry: 'Tentar novamente',
+    navHome: 'Início',
+    navAnalysis: 'Cripto',
+    navMetals: 'Metais',
+    navForex: 'Câmbio',
+    navAbout: 'Sobre nós',
+    fundTitle: 'Análise Fundamental',
+    fundDesc: 'Variações diárias, semanais e mensais da moeda no mercado cambial.',
+    techTitle: 'Análise Técnica',
+    techDesc: 'Indicadores de tendência, momentum e volatilidade sobre o histórico recente.',
+    up: 'Alta',
+    down: 'Baixa',
+    dailyTitle: 'Evolução do preço — 90 dias',
+    dailyDesc: 'Preço de fecho diário com as médias de tendência de curto e longo prazo sobrepostas.',
+    liveTitle: 'Gráfico em tempo real',
+    liveDesc: 'Gráfico ao vivo do mercado · velas de 1 hora.',
+    summaryTitle: 'Resumo e Recomendação Profissional',
+    combinedLabel: 'Prob. de Alta Combinada',
+    summaryPlaceholder: 'A analisar as duas abordagens para gerar uma recomendação…',
+    disclaimer: '⚠️ Esta análise é gerada automaticamente a partir de dados públicos de mercado e indicadores estatísticos. Não constitui consultoria financeira. Investir em moedas envolve risco elevado.',
+    footerPrefix: 'MarketPulse · Dados de mercado em tempo real · Atualizado:',
+    footerLegal: 'Políticas de uso e responsabilidade',
+    footerVersion: 'Versão',
+    footerRights: 'Todos os direitos reservados.',
+    m24h: 'Variação 24h',
+    m7d: 'Variação 7 dias',
+    m30d: 'Variação 30 dias',
+    mVol: 'Volume do último dia vs média 20d',
+    mDayHigh: 'Máximo 7 dias',
+    mDayLow: 'Mínimo 7 dias',
+    metricRsi: 'Impulso do mercado',
+    metricSma20: 'Tendência curta',
+    metricSma50: 'Tendência longa',
+    metricMacd: 'Mudança de impulso',
+    metricSignal: 'Sinal de impulso',
+    metricHist: 'Força do impulso',
+    bullish: 'Altista',
+    bearish: 'Baixista',
+    neutral: 'Neutro',
+    recoBuy: 'COMPRAR',
+    recoSell: 'VENDER',
+    recoHold: 'NEUTRO',
+    recoBuyText: 'Comprar / Manter posições compradas',
+    recoSellText: 'Vender / Evitar novas entradas',
+    recoHoldText: 'Manter e aguardar confirmação',
+    summaryText: 'Combinando a análise fundamental ({fu}%) com a técnica ({tu}%), o modelo estima uma probabilidade combinada de alta de {cu}% para hoje, {date}. Recomendação: {reco}.',
+    detWeight: 'Peso técnico (55%) vs fundamental (45%) — o curto prazo guia-se mais pelo momentum do preço.',
+    detFundUp: 'O contexto do ativo (variações recentes, volume) favorece os compradores.',
+    detFundDown: 'O contexto do ativo mostra cautela ou pressão vendedora.',
+    detFundNeutral: 'O contexto do ativo mantém-se neutro, sem viés claro.',
+    detTechUp: 'Os indicadores técnicos sugerem momentum altista.',
+    detTechDown: 'Os indicadores técnicos sugerem fraqueza ou possível correção.',
+    detTechNeutral: 'Os indicadores técnicos estão mistos, sem tendência definida.',
+    detRisk: 'Faça gestão do risco: use stop-loss e não invista mais do que pode perder.',
+    chartPrice: 'Preço de {coin} ({quote})',
+    rangeTitle: 'Faixa estimada de oscilação — hoje',
+    rangeNote: 'Estimado a partir da volatilidade recente e do movimento médio diário do ativo, ajustado pela probabilidade combinada de alta/baixa. É uma faixa estatística informativa, não uma garantia.',
+    rangeVol: 'Volatilidade diária (σ · 90 dias)',
+    rangeUp: 'Cenário altista — máx. de alta hoje',
+    rangeDown: 'Cenário baixista — máx. de baixa hoje',
+    rangePrice: 'Intervalo de preço esperado para hoje',
+    rangeClose: 'Variação esperada no fecho de hoje',
+    rangeClosePrice: 'Preço esperado no fecho de hoje',
+    tradeTitle: 'Plano operacional de hoje',
+    profileCons: '🛡️ Conservador',
+    profileMed: '⚖️ Moderado',
+    profileAgg: '🔥 Agressivo',
+    tradeLong: 'Posição comprada (buy)',
+    tradeShort: 'Posição vendida (sell)',
+    tradeEntry: 'Preço de entrada',
+    tradeStop: 'Stop loss',
+    tradeTarget: 'Preço de saída',
+    tradeRR: 'Rácio ganho / risco',
+    tradeNote: 'Três perfis para a operação de hoje conforme a sua tolerância ao risco. Conservador: espera um recuo, stop apertado para arriscar pouco por operação e saída antecipada. Moderado: recuo ligeiro, stop padrão e saída na extremidade estimada do dia. Agressivo: entrada a mercado, stop largo que aguenta o ruído e saída em extensão. Níveis estatísticos; não é consultoria financeira.',
+  },
   en: {
     docTitle: 'MarketPulse — {coin} Analysis',
     tagline: 'Daily forex analysis',
@@ -248,13 +340,15 @@ const I18N = {
 // ---------- Estado de preferencias ----------
 const state = {
   theme: localStorage.getItem('btc-theme') || 'dark',
-  lang: localStorage.getItem('btc-lang') || 'es',
+  lang: (() => { const s = localStorage.getItem('btc-lang'); return LOC_BY_LANG[s] ? s : 'es'; })(),
   statusKey: 'statusLoading',
   inverted: invertedFromUrl,
 };
 
 function pairName() {
-  const base = state.lang === 'en' ? pair.nameEn : pair.name;
+  const base = (state.lang === 'en' && pair.nameEn) ? pair.nameEn
+            : (state.lang === 'pt' && pair.namePt) ? pair.namePt
+            : pair.name;
   if (!state.inverted) return base;
   // "Euro / Dólar" -> "Dólar / Euro" (misma regla para ES y EN)
   return base.split('/').map(s => s.trim()).reverse().join(' / ');
@@ -309,7 +403,7 @@ function t(key) {
   return (I18N[state.lang] && I18N[state.lang][key]) || I18N.es[key] || key;
 }
 
-function locale() { return state.lang === 'es' ? 'es-ES' : 'en-US'; }
+function locale() { return LOC_BY_LANG[state.lang] || 'es-ES'; }
 
 function fmtUSD(n) {
   return new Intl.NumberFormat(locale(), { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
@@ -369,8 +463,10 @@ function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = fillText(t(el.getAttribute('data-i18n')));
   });
-  els.langEs.classList.toggle('active', state.lang === 'es');
-  els.langEn.classList.toggle('active', state.lang === 'en');
+  // Un solo recorrido para los 3 botones: anadir un idioma no obliga a tocar mas lineas.
+  [['langEs', 'es'], ['langEn', 'en'], ['langPt', 'pt']].forEach(([id, code]) => {
+    els[id]?.classList.toggle('active', state.lang === code);
+  });
   els.statusText.textContent = fillText(t(state.statusKey));
   els.pairBanner.textContent = `${pairName()} · ${viewSymbol()}`;
   updateInvertUi();
@@ -722,7 +818,7 @@ function renderChart(prices, dates) {
 
 function drawChart(canvas, prices, dates) {
   const ctx = canvas.getContext('2d');
-  const tag = state.lang === 'es' ? 'es-ES' : 'en-US';
+  const tag = LOC_BY_LANG[state.lang] || 'es-ES';
   const labels = dates.map(d => d.toLocaleDateString(tag, { day: '2-digit', month: 'short' }));
   const sma20Series = smaSeries(prices, 20);
   const sma50Series = smaSeries(prices, 50);
@@ -850,7 +946,7 @@ function createTradingView() {
   const container = document.getElementById('tvChart');
   if (!container) return;
   const theme = state.theme === 'light' ? 'light' : 'dark';
-  const locale = state.lang === 'es' ? 'es' : 'en';
+  const locale = TV_LANG[state.lang] || 'es';
 
   loadTradingViewScript()
     .then(() => {
@@ -1150,6 +1246,7 @@ els.themeToggle?.addEventListener('click', () => {
 });
 els.langEs?.addEventListener('click', () => setLang('es'));
 els.langEn?.addEventListener('click', () => setLang('en'));
+els.langPt?.addEventListener('click', () => setLang('pt'));
 
 document.querySelectorAll('.coin-tab').forEach(a => {
   a.classList.toggle('active', a.dataset.pair === pairKey);

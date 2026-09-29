@@ -30,14 +30,19 @@
 //     acciones del trust, no el metal, y eso confunde a quien lee el panel.
 //   - Los que quedan cotizan en USD, así que quote queda sin usar en la configu
 //     (fmtUSD lo respeta por si algún activo futuro se apoya en otra moneda).
+// Locales por idioma: números/fechas (pt-BR usa R$ y dd/mm/aaaa) y el idioma
+// que espera el widget de TradingView. El código era binario (es -> resto en).
+const LOC_BY_LANG = { es: 'es-ES', en: 'en-US', pt: 'pt-BR' };
+const TV_LANG = { es: 'es', en: 'en', pt: 'pt' };
+
 const ASSETS = {
-  gold:      { id: 'gold',      name: 'Oro',          nameEn: 'Gold',      symbol: 'XAU', yahoo: 'GC=F',  tv: 'OANDA:XAUUSD',   goldApi: true },
-  silver:    { id: 'silver',    name: 'Plata',        nameEn: 'Silver',    symbol: 'XAG', yahoo: 'SI=F',  tv: 'OANDA:XAGUSD',   goldApi: true },
-  platinum:  { id: 'platinum',  name: 'Platino',      nameEn: 'Platinum',  symbol: 'XPT', yahoo: 'PL=F',  tv: 'OANDA:XPTUSD',   goldApi: true },
-  palladium: { id: 'palladium', name: 'Paladio',      nameEn: 'Palladium', symbol: 'XPD', yahoo: 'PA=F',  tv: 'OANDA:XPDUSD',   goldApi: true },
-  oil:       { id: 'oil',       name: 'Petróleo WTI', nameEn: 'WTI Oil',   symbol: 'CL',  yahoo: 'CL=F',  tv: 'NYMEX:CL1!' },
-  copper:    { id: 'copper',    name: 'Cobre',        nameEn: 'Copper',    symbol: 'HG',  yahoo: 'HG=F',  tv: 'COMEX:HG1!' },
-  carbon:    { id: 'carbon',    name: 'Carbono',      nameEn: 'Carbon',    symbol: 'CO2', yahoo: 'KRBN',  tv: 'AMEX:KRBN' },
+  gold:      { id: 'gold',      name: 'Oro',          nameEn: 'Gold',      namePt: 'Ouro',        symbol: 'XAU', yahoo: 'GC=F',  tv: 'OANDA:XAUUSD',   goldApi: true },
+  silver:    { id: 'silver',    name: 'Plata',        nameEn: 'Silver',    namePt: 'Prata',       symbol: 'XAG', yahoo: 'SI=F',  tv: 'OANDA:XAGUSD',   goldApi: true },
+  platinum:  { id: 'platinum',  name: 'Platino',      nameEn: 'Platinum',  namePt: 'Platina',     symbol: 'XPT', yahoo: 'PL=F',  tv: 'OANDA:XPTUSD',   goldApi: true },
+  palladium: { id: 'palladium', name: 'Paladio',      nameEn: 'Palladium', namePt: 'Paládio',     symbol: 'XPD', yahoo: 'PA=F',  tv: 'OANDA:XPDUSD',   goldApi: true },
+  oil:       { id: 'oil',       name: 'Petróleo WTI', nameEn: 'WTI Oil',   namePt: 'Petróleo WTI',symbol: 'CL',  yahoo: 'CL=F',  tv: 'NYMEX:CL1!' },
+  copper:    { id: 'copper',    name: 'Cobre',        nameEn: 'Copper',    namePt: 'Cobre',       symbol: 'HG',  yahoo: 'HG=F',  tv: 'COMEX:HG1!' },
+  carbon:    { id: 'carbon',    name: 'Carbono',      nameEn: 'Carbon',    namePt: 'Carbono',     symbol: 'CO2', yahoo: 'KRBN',  tv: 'AMEX:KRBN' },
 };
 
 const assetParam = new URLSearchParams(location.search).get('asset');
@@ -54,6 +59,7 @@ const els = {
   themeToggle: document.getElementById('themeToggle'),
   langEs: document.getElementById('langEs'),
   langEn: document.getElementById('langEn'),
+  langPt: document.getElementById('langPt'),
   fundBadge: document.getElementById('fundBadge'),
   fundMetrics: document.getElementById('fundMetrics'),
   fundUp: document.getElementById('fundUp'),
@@ -81,7 +87,7 @@ const els = {
   assetBanner: document.getElementById('assetBanner'),
 };
 
-// ---------- Internacionalización (ES / EN) ----------
+// ---------- Internacionalización (ES / EN / PT) ----------
 const I18N = {
   es: {
     docTitle: 'MarketPulse — Análisis de {coin}',
@@ -167,6 +173,91 @@ const I18N = {
     tradeTarget: 'Precio de salida',
     tradeRR: 'Ratio beneficio / riesgo',
     tradeNote: 'Tres perfiles para la operación de hoy según tu tolerancia al riesgo. Conservador: espera un retroceso, stop estrecho para arriesgar poco por operación y salida temprana. Medio: retroceso leve, stop estándar y salida en el extremo estimado del día. Arriesgado: entrada a mercado, stop amplio que aguanta el ruido y salida en extensión. Niveles estadísticos; no es asesoría financiera.',
+  },
+  pt: {
+    docTitle: 'MarketPulse — Análise de {coin}',
+    tagline: 'Análise diária de metais e energia',
+    priceLabel: 'Preço atual',
+    statusLoading: 'Carregando dados do mercado em tempo real…',
+    statusLoadingCoin: 'Carregando dados de {coin}…',
+    statusOk: 'Análise atualizada com sucesso.',
+    statusError: '⚠️ Não foi possível carregar os dados (limite da API ou falta de conexão). Clique em Tentar novamente em alguns segundos.',
+    chartUnavailable: 'Não foi possível carregar o gráfico de evolução. O resto da análise é válido.',
+    tvUnavailable: 'Não foi possível carregar o gráfico em tempo real. Verifique a sua ligação.',
+    retry: 'Tentar novamente',
+    navHome: 'Início',
+    navAnalysis: 'Cripto',
+    navMetals: 'Metais',
+    navForex: 'Câmbio',
+    navAbout: 'Sobre nós',
+    fundTitle: 'Análise Fundamental',
+    fundDesc: 'Variações diárias, semanais e mensais do ativo no mercado à vista.',
+    techTitle: 'Análise Técnica',
+    techDesc: 'Indicadores de tendência, momentum e volatilidade sobre o histórico recente.',
+    up: 'Alta',
+    down: 'Baixa',
+    dailyTitle: 'Evolução do preço — 90 dias',
+    dailyDesc: 'Preço de fecho diário com as médias de tendência de curto e longo prazo sobrepostas.',
+    liveTitle: 'Gráfico em tempo real',
+    liveDesc: 'Gráfico ao vivo do mercado · velas de 1 hora.',
+    summaryTitle: 'Resumo e Recomendação Profissional',
+    combinedLabel: 'Prob. de Alta Combinada',
+    summaryPlaceholder: 'A analisar as duas abordagens para gerar uma recomendação…',
+    disclaimer: '⚠️ Esta análise é gerada automaticamente a partir de dados públicos de mercado e indicadores estatísticos. Não constitui consultoria financeira. Investir em matérias-primas envolve risco elevado.',
+    footerPrefix: 'MarketPulse · Dados de mercado em tempo real · Atualizado:',
+    footerLegal: 'Políticas de uso e responsabilidade',
+    footerVersion: 'Versão',
+    footerRights: 'Todos os direitos reservados.',
+    m24h: 'Variação 24h',
+    m7d: 'Variação 7 dias',
+    m30d: 'Variação 30 dias',
+    mVol: 'Volume do último dia vs média 20d',
+    mDayHigh: 'Máximo 7 dias',
+    mDayLow: 'Mínimo 7 dias',
+    metricRsi: 'Impulso do mercado',
+    metricSma20: 'Tendência curta',
+    metricSma50: 'Tendência longa',
+    metricMacd: 'Mudança de impulso',
+    metricSignal: 'Sinal de impulso',
+    metricHist: 'Força do impulso',
+    bullish: 'Altista',
+    bearish: 'Baixista',
+    neutral: 'Neutro',
+    recoBuy: 'COMPRAR',
+    recoSell: 'VENDER',
+    recoHold: 'NEUTRO',
+    recoBuyText: 'Comprar / Manter posições compradas',
+    recoSellText: 'Vender / Evitar novas entradas',
+    recoHoldText: 'Manter e aguardar confirmação',
+    summaryText: 'Combinando a análise fundamental ({fu}%) com a técnica ({tu}%), o modelo estima uma probabilidade combinada de alta de {cu}% para hoje, {date}. Recomendação: {reco}.',
+    detWeight: 'Peso técnico (55%) vs fundamental (45%) — o curto prazo guia-se mais pelo momentum do preço.',
+    detFundUp: 'O contexto do ativo (variações recentes, volume) favorece os compradores.',
+    detFundDown: 'O contexto do ativo mostra cautela ou pressão vendedora.',
+    detFundNeutral: 'O contexto do ativo mantém-se neutro, sem viés claro.',
+    detTechUp: 'Os indicadores técnicos sugerem momentum altista.',
+    detTechDown: 'Os indicadores técnicos sugerem fraqueza ou possível correção.',
+    detTechNeutral: 'Os indicadores técnicos estão mistos, sem tendência definida.',
+    detRisk: 'Faça gestão do risco: use stop-loss e não invista mais do que pode perder.',
+    chartPrice: 'Preço de {coin} (USD)',
+    rangeTitle: 'Faixa estimada de oscilação — hoje',
+    rangeNote: 'Estimado a partir da volatilidade recente e do movimento médio diário do ativo, ajustado pela probabilidade combinada de alta/baixa. É uma faixa estatística informativa, não uma garantia.',
+    rangeVol: 'Volatilidade diária (σ · 90 dias)',
+    rangeUp: 'Cenário altista — máx. de alta hoje',
+    rangeDown: 'Cenário baixista — máx. de baixa hoje',
+    rangePrice: 'Intervalo de preço esperado para hoje',
+    rangeClose: 'Variação esperada no fecho de hoje',
+    rangeClosePrice: 'Preço esperado no fecho de hoje',
+    tradeTitle: 'Plano operacional de hoje',
+    profileCons: '🛡️ Conservador',
+    profileMed: '⚖️ Moderado',
+    profileAgg: '🔥 Agressivo',
+    tradeLong: 'Posição comprada (buy)',
+    tradeShort: 'Posição vendida (sell)',
+    tradeEntry: 'Preço de entrada',
+    tradeStop: 'Stop loss',
+    tradeTarget: 'Preço de saída',
+    tradeRR: 'Rácio ganho / risco',
+    tradeNote: 'Três perfis para a operação de hoje conforme a sua tolerância ao risco. Conservador: espera um recuo, stop apertado para arriscar pouco por operação e saída antecipada. Moderado: recuo ligeiro, stop padrão e saída na extremidade estimada do dia. Agressivo: entrada a mercado, stop largo que aguenta o ruído e saída em extensão. Níveis estatísticos; não é consultoria financeira.',
   },
   en: {
     docTitle: 'MarketPulse — {coin} Analysis',
@@ -258,12 +349,17 @@ const I18N = {
 // ---------- Estado de preferencias ----------
 const state = {
   theme: localStorage.getItem('btc-theme') || 'dark',
-  lang: localStorage.getItem('btc-lang') || 'es',
+  lang: (() => {
+    const saved = localStorage.getItem('btc-lang');
+    return LOC_BY_LANG[saved] ? saved : 'es';
+  })(),
   statusKey: 'statusLoading',
 };
 
 function assetName() {
-  return state.lang === 'en' ? asset.nameEn : asset.name;
+  return state.lang === 'en' && asset.nameEn ? asset.nameEn
+       : state.lang === 'pt' && asset.namePt ? asset.namePt
+       : asset.name;
 }
 
 function fillText(s) {
@@ -277,7 +373,7 @@ function t(key) {
   return (I18N[state.lang] && I18N[state.lang][key]) || I18N.es[key] || key;
 }
 
-function locale() { return state.lang === 'es' ? 'es-ES' : 'en-US'; }
+function locale() { return LOC_BY_LANG[state.lang] || 'es-ES'; }
 
 function fmtUSD(n) {
   // Todos los activos actuales cotizan en USD, pero la moneda sale del activo
@@ -329,8 +425,11 @@ function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = fillText(t(el.getAttribute('data-i18n')));
   });
-  els.langEs.classList.toggle('active', state.lang === 'es');
-  els.langEn.classList.toggle('active', state.lang === 'en');
+  // Un solo recorrido para los 3 botones: añadir un idioma no obliga a tocar
+  // más líneas aquí.
+  [['langEs', 'es'], ['langEn', 'en'], ['langPt', 'pt']].forEach(([id, code]) => {
+    els[id]?.classList.toggle('active', state.lang === code);
+  });
   els.statusText.textContent = fillText(t(state.statusKey));
   els.assetBanner.textContent = `${assetName()} · ${asset.symbol}`;
   renderAnalysis();
@@ -744,7 +843,7 @@ function renderChart(prices, dates) {
 
 function drawChart(canvas, prices, dates) {
   const ctx = canvas.getContext('2d');
-  const tag = state.lang === 'es' ? 'es-ES' : 'en-US';
+  const tag = LOC_BY_LANG[state.lang] || 'es-ES';
   const labels = dates.map(d => d.toLocaleDateString(tag, { day: '2-digit', month: 'short' }));
   const sma20Series = smaSeries(prices, 20);
   const sma50Series = smaSeries(prices, 50);
@@ -872,7 +971,7 @@ function createTradingView() {
   const container = document.getElementById('tvChart');
   if (!container) return;
   const theme = state.theme === 'light' ? 'light' : 'dark';
-  const locale = state.lang === 'es' ? 'es' : 'en';
+  const locale = TV_LANG[state.lang] || 'es';
 
   loadTradingViewScript()
     .then(() => {
@@ -1089,6 +1188,7 @@ els.themeToggle?.addEventListener('click', () => {
 });
 els.langEs?.addEventListener('click', () => setLang('es'));
 els.langEn?.addEventListener('click', () => setLang('en'));
+els.langPt?.addEventListener('click', () => setLang('pt'));
 
 document.querySelectorAll('.coin-tab').forEach(a => {
   a.classList.toggle('active', a.dataset.asset === assetKey);
