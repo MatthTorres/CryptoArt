@@ -22,3 +22,10 @@ __pycache__/
 # Capturas de revision visual
 shots/
 _shots.txt
+
+# Temporales de las pruebas headless (los escribe Chrome, no son fuente)
+_ft.txt
+_ft.err
+_s.txt
+_ov.txt
+
