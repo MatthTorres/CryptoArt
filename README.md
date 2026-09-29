@@ -65,7 +65,7 @@ Es una web **100% estática** (sin backend). Opciones gratuitas:
 ### Sincronización con el repositorio (regla del proyecto)
 
 GitHub Pages **solo publica lo que está subido**: un commit local no se ve en
-`https://matthtorres.github.io/CryptoArt/` hasta que se hace `git push`. Para que
+`https://matthtorres.github.io/MarketPulse/` hasta que se hace `git push`. Para que
 la web publicada nunca quede desactualizada, **cada tanda de cambios se commitea
 y se sube de inmediato**:
 
@@ -87,10 +87,10 @@ el navegador puede conservar el HTML, el CSS o el JS antiguos.
 
 ### Dominio y SEO (paso a paso)
 
-Hasta que haya hosting, las URLs absolutas (canonical, `og:url`, `og:image`,
-`twitter:image`, `robots.txt` y `sitemap.xml`) usan el dominio reservado
-`https://marketpulse.example` (`.example` lo reserva la IANA): si se publica sin fijar el
-origen, sencillamente no se genera la tarjeta social ni se indexa. Para activarlo:
+El origen ya está fijado en `https://matthtorres.github.io/MarketPulse/` y lo
+aplican `canonical`, `og:url`, `og:image`, `twitter:image`, `robots.txt` y
+`sitemap.xml`. Ese prefijo sale del **nombre del repositorio**, así que si algún
+día cambia hay que volver a ejecutar la herramienta:
 
 ```bash
 # 1) fija el dominio real en todas las URLs absolutas (incluye subcarpeta si aplica)
@@ -167,7 +167,7 @@ Si el widget muestra *«Este símbolo no existe»*, el proveedor elegido no publ
 - **Políticas de uso y liberación de responsabilidad**: página `legal.html`, accesible desde el enlace *«Políticas de uso y responsabilidad»* del pie de página de todas las vistas (7 apartados: uso permitido, uso no permitido, liberación de responsabilidad, riesgo de los activos, datos y disponibilidad, propiedad intelectual y contacto/cambios).
 - **Analítica y privacidad (RGPD)**: se usa **Umami Cloud** (umami.is) como encargado del tratamiento para medir el uso del sitio. Analítica **sin cookies**, con la **IP anonimizada** y sin datos que permitan identificar al visitante, por lo que **no hace falta banner de consentimiento** (el RGPD solo lo exige ante cookies o datos identificables). Dato recogido: páginas vistas, URL de referencia, tipo de navegador, sistema operativo, tipo de dispositivo y país de origen. Servidores en la UE y EE. UU., con declaración GDPR y CCPA, y **retención de 6 meses** (plan Hobby). Declarado en el punto 5 de `legal.html` y resumido en `about.html`, en los tres idiomas. El script va con `defer` al final del `<body>`; lo instala `tools/install_umami.py <website-id>`, que es idempotente (si ya está, solo actualiza el ID).
   - ⚠️ El punto 5 decía antes que «no operamos servidores que almacenen tu información personal»: **dejó de ser cierto al instalar la analítica** y se corrigió en el mismo commit. Si algún día se añade un proveedor con cookies (Google Analytics, AdSense…), hay que revisarlo y añadir el banner.
-- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.8.1**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`, y cada HTML lleva el mismo `vX.Y.Z` como respaldo por si el navegador no ejecuta JS.
+- **Versión del programa**: se define una sola vez en `js/version.js` (`APP_VERSION`, actual **v3.9.0**). El pie de página de las 6 páginas muestra `Versión vX.Y.Z`, y cada HTML lleva el mismo `vX.Y.Z` como respaldo por si el navegador no ejecuta JS.
 - **Cache-bust en uso**: `css/style.css?v=10`, `js/version.js?v=13`, `js/site.js?v=20`, `js/app.js?v=19`, `js/metals.js?v=20`, `js/forex.js?v=19`. Las 6 páginas apuntan a los mismos valores para no descargar dos copias del mismo archivo.
 - **Pie de página unificado**: las 6 páginas cierran con las mismas dos líneas (versión con `data-app-version` y copyright con `data-app-year`) y con **dos enlaces que nunca apuntan a la página actual**: `index/analysis/metals/forex` → políticas + *Sobre nosotros*, `about` → políticas + *Inicio*, `legal` → *Inicio* + *Sobre nosotros*. La primera línea de `index/analysis/metals/forex/about` es el sello de datos de mercado (`footerPrefix` + `#updateTime`), que `js/version.js` rellena al cargar y el JS de cada sección sustituye después por la hora real del último dato; `legal.html` no muestra hora y usa la línea de marca (`footerBrandLine`) porque no tiene datos de mercado.
 - **Copyright**: `© <año actual> MarketPulse`; el año se calcula automáticamente en el navegador.

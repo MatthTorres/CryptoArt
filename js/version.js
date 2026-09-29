@@ -5,7 +5,7 @@
 // Al publicar una versión nueva, cambia solo APP_VERSION aquí.
 // ==========================================================
 
-const APP_VERSION = '3.8.1'; // Analitica anonima con Umami Cloud (sin cookies, IP anonimizada) en las 7 paginas, y el punto 5 de legal.html corregido en ES/EN/PT: nombra al encargado del tratamiento, que datos se recogen, ubicacion de servidores y retencion de 6 meses. site v21, 3.8.1
+const APP_VERSION = '3.9.0'; // Origen real fijado en https://matthtorres.github.io/MarketPulse/ (31 URLs absolutas: canonical, og:url, og:image, twitter:image, robots.txt y sitemap.xml) en vez del placeholder marketpulse.example. Requiere renombrar el repositorio de CryptoArt a MarketPulse en GitHub para que la URL exista. 3.9.0
 const APP_RELEASE = {
   es: '28 de septiembre de 2026',
   en: 'September 28, 2026',

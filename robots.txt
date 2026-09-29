@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://marketpulse.example/sitemap.xml
+Sitemap: https://matthtorres.github.io/MarketPulse/sitemap.xml
