@@ -14,3 +14,7 @@ cache/
 
 # Dependencias (si se añaden en el futuro)
 node_modules/
+
+# Python (caché de bytecode de las herramientas)
+__pycache__/
+*.pyc
