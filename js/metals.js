@@ -1,10 +1,10 @@
 // ==========================================================
 // MarketPulse — Análisis de Metales, Energía y Carbono
-// (Oro, Plata, Platino, Paladio, Petróleo, Cobre, Carbono)
+// (Oro, Platino, Paladio, Petróleo, Cobre, Carbono)
 // Fuentes: Yahoo Finance (vía proxy AllOrigins) para historial + gold-api.com para spot
 // ==========================================================
 
-// ---------- Configuración de activos (7 pestañas) ----------
+// ---------- Configuración de activos (6 pestañas) ----------
 // tv: identificador exacto de TradingView. Los símbolos spot de metales usan el
 // proveedor OANDA (canónico en TradingView); un prefijo inexistente hace que el
 // widget muestre «Este símbolo no existe».
@@ -37,7 +37,6 @@ const TV_LANG = { es: 'es', en: 'en', pt: 'pt' };
 
 const ASSETS = {
   gold:      { id: 'gold',      name: 'Oro',          nameEn: 'Gold',      namePt: 'Ouro',        symbol: 'XAU', yahoo: 'GC=F',  tv: 'OANDA:XAUUSD',   goldApi: true },
-  silver:    { id: 'silver',    name: 'Plata',        nameEn: 'Silver',    namePt: 'Prata',       symbol: 'XAG', yahoo: 'SI=F',  tv: 'OANDA:XAGUSD',   goldApi: true },
   platinum:  { id: 'platinum',  name: 'Platino',      nameEn: 'Platinum',  namePt: 'Platina',     symbol: 'XPT', yahoo: 'PL=F',  tv: 'OANDA:XPTUSD',   goldApi: true },
   palladium: { id: 'palladium', name: 'Paladio',      nameEn: 'Palladium', namePt: 'Paládio',     symbol: 'XPD', yahoo: 'PA=F',  tv: 'OANDA:XPDUSD',   goldApi: true },
   oil:       { id: 'oil',       name: 'Petróleo WTI', nameEn: 'WTI Oil',   namePt: 'Petróleo WTI',symbol: 'CL',  yahoo: 'CL=F',  tv: 'NYMEX:CL1!' },
@@ -543,8 +542,11 @@ async function fetchRetry(url, tries = 4, baseDelay = 1500) {
   }
   throw lastErr || new Error('fetch failed');
 }
-// Símbolos Binance para fallback (Oro/Plata; resto usa Yahoo multi-proxy).
-const BINANCE_FALLBACK = { gold: 'PAXGUSDT', silver: 'XAGUSDT' };
+// Símbolos Binance para fallback. Solo el oro: PAXG es un token respaldado por
+// oro físico, así que si cae Yahoo la serie sigue siendo representativa.
+// La plata se retiró del selector porque su único plan B (XAGUSDT) no existe en
+// Binance — devuelve HTTP 400 — y ese respaldo muerto era peor que no tenerlo.
+const BINANCE_FALLBACK = { gold: 'PAXGUSDT' };
 async function loadHistoryBinance(symbol) {
   const data = await fetchRetry(
     `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1d&limit=90`,
@@ -648,7 +650,7 @@ async function loadHistoricalPrices() {
   const key = 'mp_hist_' + asset.id;
   const cachedData = getCached(key);
   if (cachedData) return cachedData;
-  // 1) Yahoo en cascada. 2) Binance (oro/plata). 3) Backup 24h.
+  // 1) Yahoo en cascada. 2) Binance (oro). 3) Backup 24h.
   try {
     const data = await fetchYahooChart(asset.yahoo);
     const parsed = parseYahooChart(data);
